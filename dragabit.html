@@ -58,20 +58,52 @@ function getImages() {
     }                                                        
 }
 function rotateMe(me) {
-    var anyRotation = 'r90 r270 r180';
+    var anyRotation = 'r90 r270 r180',
+        po = $(me).position(); // original position
     $me = $(me);
+    // starting at left 111, play direction = East
+    // if rotation is unreliable on some platforms, could
+    // have 4 images per domino, and show only the one in
+    // the desired orientation
     if ($me.hasClass('r90')) {
         $me.removeClass(anyRotation);
+        $me.css('left', '111');
         $me.addClass('r180');
     } else if ($me.hasClass('r180')) {
         $me.removeClass(anyRotation);
+        $me.css('left', '93');
         $me.addClass('r270');
     } else if ($me.hasClass('r270')) {
         $me.removeClass(anyRotation);
+        $me.css('left', '111');
     } else {
+        // try moving it left first
+        $me.css('left', '93');
         $me.addClass('r90');
     }
+    var pr = $me.position(); // rotated position
+    $me.data({
+            dx: Math.round(pr.left - po.left), // delta X
+            dy: Math.round(pr.top - po.top) // delta Y
+        });
+    console.log("data is: ", $me.data('dx'), $me.data('dy'));
 }
+
+// Needed to read the "real" position
+$.fn.adjustedPosition = function() {
+    var p = $(this).position();
+    return {
+        left: p.left - this.data('dx'),
+        top: p.top - this.data('dy')
+    }
+};
+    
+    // Write the position
+    // img.css(pos);
+    
+    // Read the position again
+    // pos = img.adjustedPosition();    
+
 
 $(document).ready(function() {
     getImages();
@@ -82,12 +114,17 @@ $(document).ready(function() {
         $domino.dblclick(function() {
             // console.log("double click");
             rotateMe(this);
+            console.log("after rotate, position is: ", $(this).position());
+                // Read the position
+            var pos = $(this).adjustedPosition();    
+            // console.log("adjusted pos is: ", pos);
+            // $(this).css(pos);
         });
         $domino.mousedown(function() {
-    	   console.log("mouse down", $(this).position());
+    	   // console.log("mouse down", $(this).position());
         });
         $domino.mouseup(function() {
-    	   console.log("mouse up", $(this).position());
+    	   // console.log("mouse up", $(this).position());
         });
     });
 });
