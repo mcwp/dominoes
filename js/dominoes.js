@@ -1,39 +1,27 @@
-<html>
-	<head>
-		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
-        <style type="text/css">
-div {
-    position: absolute;
-}
-.r90 {
-    -webkit-transform:  rotate(90deg);
-    -moz-transform:     rotate(90deg);
-    -o-transform:       rotate(90deg);
-    -ms-transform:      rotate(90deg);
-    transform:  rotate(90deg);    
-}
-.r180 {
-    -webkit-transform:  rotate(180deg);
-    -moz-transform:     rotate(180deg);
-    -o-transform:       rotate(180deg);
-    -ms-transform:      rotate(180deg);
-    transform:  rotate(180deg);    
-}
-.r270 {
-    -webkit-transform:  rotate(270deg);
-    -moz-transform:     rotate(270deg);
-    -o-transform:       rotate(270deg);
-    -ms-transform:      rotate(270deg);
-    transform:  rotate(270deg);    
-}
-        </style>
-    </head>
-	<body style='background-color:black;'>
-        <div id="start"></div>
-	    <script>
 
-function getImages() {
+
+
+var MESSAGE_PROPERTIES = {
+    "pieceId" : "PIECEID",
+    "newTop" : "NEWTOP",
+    "newLeft" : "NEWLEFT"
+};
+
+
+var readyToPlay = false;
+var redplayer = false;
+var channel = (Math.round (Math.random()*100000)).toString();
+var destination = "/topic/dominoes";
+
+var playPoints, scorePoints;
+
+
+function setUpMessaging() {
+    // construct the WebSocket location
+}
+
+function setUpBoneyard() {
+	// create the dominoes
     var dominoes = ['db', 'd6', 'd5', 'd4', 'd3', 'd2', 'd1',
                           'b6', 'b5', 'b4', 'b3', 'b2', 'b1',
                                 '56', '46', '36', '26', '16',
@@ -42,20 +30,15 @@ function getImages() {
                                                   '23', '13',
                                                         '12', 'back'];
     for (i=0; i < dominoes.length; i++) {
-        // newp = "<div id=piece" + i + "/>"
-        // $('div#pieces').append($(newp).addClass('piece'));
-        //         <div id="domino">
-        //     <img src="https://dl.dropboxusercontent.com/u/78878172/23.png"/>
-        // </div>   
-
+		// 
         d = dominoes[i];
         dburl = "https://dl.dropboxusercontent.com/u/78878172/domis/";
         pic = "<img src='" + dburl + d + ".png'/>";
         // newd = "<div id=" + d + "/>" + pic + "</div>";
         newd = "<div id=" + d + "/>" + "</div>";
-        $('div#start').append($(newd).addClass('domino')); 
-        $('div#'+d).append($(pic));
-    }                                                        
+		$('div#boneyard').append($(newd).addClass('domino'));
+		$('div#'+d).append($(pic));
+	}
 }
 
 
@@ -96,24 +79,8 @@ function rotateMe(me) {
     console.log("data is: ", $me.data('dx'), $me.data('dy'));
 }
 
-// Needed to read the "real" position
-$.fn.adjustedPosition = function() {
-    var p = $(this).position();
-    return {
-        left: p.left - this.data('dx'),
-        top: p.top - this.data('dy')
-    }
-};
-    
-    // Write the position
-    // img.css(pos);
-    
-    // Read the position again
-    // pos = img.adjustedPosition();    
-
-
 $(document).ready(function() {
-    getImages();
+    setUpBoneyard();
     $('.domino').each(function(index, domino){
         $domino = $(domino);
         // console.log(index, $domino);
@@ -122,19 +89,17 @@ $(document).ready(function() {
             // console.log("double click");
             rotateMe(this);
             console.log("after rotate, position is: ", $(this).position());
-                // Read the position
-            var pos = $(this).adjustedPosition();    
+            // Read the position
+            // var pos = $(this).adjustedPosition();    
             // console.log("adjusted pos is: ", pos);
             // $(this).css(pos);
         });
         $domino.mousedown(function() {
-    	   // console.log("mouse down", $(this).position());
+			// console.log("mouse down", $(this).position());
         });
         $domino.mouseup(function() {
-    	   // console.log("mouse up", $(this).position());
+			// console.log("mouse up", $(this).position());
         });
     });
 });
-	    </script>
-	</body>
-</html>
+
