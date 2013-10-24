@@ -22,3 +22,17 @@ div {
     -ms-transform:      rotate(270deg);
     transform:  rotate(270deg);    
 }
+.bordertest2 {
+    border-style: solid;
+    border-width: 5px;
+    border-top-color: red;
+    border-bottom-color: orange;
+}
+.bordertest {
+    border-style: solid;
+    border-left-color: blue;
+    border-right-color: green;
+    border-top-color: red;
+    border-bottom-color: yellow;
+    border-width: 3px;
+}
