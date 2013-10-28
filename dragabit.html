@@ -1,7 +1,11 @@
 <html>
 	<head>
+        <!--
 		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+        -->
+        <script type="text/javascript" src="/Users/marla/Downloads/jquery.min.js"></script>
+        <script type="text/javascript" src="/Users/marla/Downloads/jquery-ui.min.js"></script>
         <style type="text/css">
 div {
     position: absolute;
@@ -49,7 +53,8 @@ function getImages() {
         // </div>   
 
         d = dominoes[i];
-        dburl = "https://dl.dropboxusercontent.com/u/78878172/domis/";
+        // dburl = "https://dl.dropboxusercontent.com/u/78878172/domis/";
+        dburl = "../boneyard/";
         pic = "<img src='" + dburl + d + ".png'/>";
         // newd = "<div id=" + d + "/>" + pic + "</div>";
         newd = "<div id=" + d + "/>" + "</div>";
@@ -132,6 +137,13 @@ $(document).ready(function() {
         });
         $domino.mouseup(function() {
     	   // console.log("mouse up", $(this).position());
+           // test: verify no events for random click or drag 
+           // find lot coords, update each only if new? 
+           // certainly message only if new, but send x,y
+           // save start, revert if drop on occupied lot
+           // if drop on unoccupied lot, find neighbor
+           // lost in space is ok
+           // attached properly: update Tips, sumTips
         });
     });
 });

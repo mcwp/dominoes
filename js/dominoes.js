@@ -4,12 +4,12 @@ Testing too many changes stepwise:
  - add .bordertest before and after rotations.  As expected.
  - make boneyard with pip values. done.
  - use console to verify pip values. 
- - set $23 in pickDominoes and call sumTips on it. done
+ - set #23 in pickDominoes and call sumTips on it. done
 
- - set $36 next to $23
-   - update tips: $23 leftTip, $36 rightTip, $36.addClass('anyTip')
+ - set #36 next to #23
+   - update tips: #23 leftTip, #36 rightTip, #36.addClass('anyTip')
    - call sumTips
- - set $46 next to $36, rotated, and do same tests
+ - set #46 next to #36, rotated, and do same tests
 
 */
 
@@ -46,7 +46,7 @@ function setUpBoneyard() {
         ['d4', '4', '4'],   ['d3', '3', '3'],   ['d2', '2', '2'],   ['d1', '1', '1'],
         ['b6', '0', '6'],   ['b5', '0', '5'],   ['b4', '0', '4'],   ['b3', '0', '3'],
         ['b2', '0', '2'],   ['b1', '0', '1'],   ['56', '5', '6'],   ['46', '4', '6'],
-        ['36', '3', '4'],   ['26', '2', '6'],   ['16', '1', '6'],   ['45', '4', '5'],
+        ['36', '3', '6'],   ['26', '2', '6'],   ['16', '1', '6'],   ['45', '4', '5'],
         ['35', '3', '5'],   ['25', '2', '5'],   ['15', '1', '5'],   ['34', '3', '4'],
         ['24', '2', '4'],   ['14', '1', '4'],   ['23', '2', '3'],   ['13', '1', '3'],
         ['12', '1', '2'],   ['back', '0', '0'] ];
@@ -87,6 +87,15 @@ function pickDominoes() {
     $d23.addClass('leftTip');
     $d23.addClass('rightTip');
     $d23.addClass('anyTip');
+    console.log('sumTips before of #23 only:', sumTips());
+    // test: move $d36 next to $d23
+    $d36 = $('#36');
+    $d36.css('top', '111');
+    $d36.css('left', '185');
+    $d23.removeClass('rightTip');
+    $d36.addClass('rightTip');
+    $d36.addClass('anyTip');
+    console.log('sumTips after second domino:', sumTips());
 }
 
 function sumTips() {

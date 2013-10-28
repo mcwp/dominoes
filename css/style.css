@@ -36,3 +36,25 @@ div {
     border-bottom-color: yellow;
     border-width: 3px;
 }
+.leftTip {
+    border-style: solid;
+    border-left-color: green;
+    border-top-color: yellow;
+    border-bottom-color: yellow;
+    border-width: 3px;
+}
+.rightTip {
+    border-style: solid;
+    border-right-color: green;
+    border-top-color: yellow;
+    border-bottom-color: yellow;
+    border-width: 3px;
+}
+.doubleTip {
+    border-style: solid;
+    border-left-color: green;
+    border-right-color: green;
+    border-top-color: yellow;
+    border-bottom-color: yellow;
+    border-width: 3px;
+}
