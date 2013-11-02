@@ -11,6 +11,14 @@ Testing too many changes stepwise:
    - call sumTips
  - set #46 next to #36, rotated, and do same tests
 
+ - connect to string and remove draggable?
+ - don't worry about all the grids, just the ones that are active 
+ because of a Tip.  If a piece is dropped but not connected, highlight
+ it differently (blue).  
+ - on drop, snap to (virtual) grid
+   - then check to see if location validates as an extension of the play (update)
+   - or just a random piece dropped in space (highlight temporary outcast?)
+ - while dragging, message new lots only
 */
 
 
@@ -27,14 +35,44 @@ var channel = (Math.round (Math.random()*100000)).toString();
 var destination = "/topic/dominoes";
 
 var playPoints, scorePoints;
+var GRIDPIX = 37;
 
+function getLotXY(top,left) {
+    //returns an x and a y
+    //given a top and left pixels
+    return {
+        'x': Math.round(left / GRIDPIX),
+        'y': Math.round(top / GRIDPIX)
+    };
+}
+
+function XYPosition(x, y) {
+    return {
+        'top': (GRIDPIX*y).toString(),
+        'left': (GRIDPIX*x).toString()
+    };
+}
+
+function snapToGrid(d){
+    // for now, just snap up and left, no matter where in lot
+    console.log("snap ", d.position());
+    var pos = d.position();
+    var lot = getLotXY(pos.top, pos.left);
+    var pos2 = XYPosition(lot.x, lot.y);
+    console.log("pos is ", pos);
+    console.log("lot is ", lot);
+    console.log("pos2 is ", pos2);
+
+    d.css('left', pos2.left.toString());
+    d.css('top', pos2.top);
+}
 
 function setUpMessaging() {
     // construct the WebSocket location
 }
 
 function setUpBoneyard() {
-	// create the dominoes
+    // create the dominoes
     var dominoes1 = ['db', 'd6', 'd5', 'd4', 'd3', 'd2', 'd1',
                           'b6', 'b5', 'b4', 'b3', 'b2', 'b1',
                                 '56', '46', '36', '26', '16',
@@ -52,30 +90,30 @@ function setUpBoneyard() {
         ['12', '1', '2'],   ['back', '0', '0'] ];
 
     for (i=0; i < dominoes.length; i++) {
-		// 
+        // 
         var d = dominoes[i][0];
 
         var dburl = "https://dl.dropboxusercontent.com/u/78878172/domis/";
         var pic = "<img src='" + dburl + d + ".png'/>";
         // newd = "<div id=" + d + "/>" + pic + "</div>";
         var newd = "<div id=" + d + "/>" + "</div>";
-		$('div#boneyard').append($(newd).addClass('domino'));
+        $('div#boneyard').append($(newd).addClass('domino'));
         var newDomi = $('div#'+d);
-		// $('div#'+d).append($(pic));
+        // $('div#'+d).append($(pic));
         $(newDomi).append($(pic));
         $(newDomi).attr('lPips', dominoes[i][1]);
         $(newDomi).attr('rPips', dominoes[i][2]);
-	}
+    }
 }
 
 function pickDominoes() {
-	// seven to each player (just 2 players for now)
-	var back;
+    // seven to each player (just 2 players for now)
+    var back;
     // while testing: just move back out of the way
-	$back = $('#back');
-	$back.css('top', '74');
-	$back.css('left', '74');
-	console.log($back.position());
+    $back = $('#back');
+    $back.css('top', '74');
+    $back.css('left', '74');
+    console.log($back.position());
     // while testing: pick an arbitrary start
     var d23;
     $d23 = $('#23');
@@ -162,10 +200,11 @@ $(document).ready(function() {
             // $(this).css(pos);
         });
         $domino.mousedown(function() {
-			// console.log("mouse down", $(this).position());
+            // console.log("mouse down", $(this).position());
         });
         $domino.mouseup(function() {
-			// console.log("mouse up", $(this).position());
+            console.log("mouse up", $(this).position());
+            snapToGrid($(this));
         });
     });
 });
