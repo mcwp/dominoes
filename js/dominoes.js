@@ -82,14 +82,14 @@ function pickDominoes() {
     var back;
     // while testing: just move back out of the way
     $back = $('#back');
-    $back.css('top', '74');
-    $back.css('left', '74');
+    $back.css('top', (8*18).toString());
+    $back.css('left', (4*18).toString());
     console.log($back.position());
     // while testing: pick an arbitrary start
     var d23;
     $d23 = $('#23');
-    $d23.css('top', '111');
-    $d23.css('left', '185');
+    $d23.css('top', (4*18).toString());
+    $d23.css('left', (4*18).toString());
     // mark the playable tips
     $d23.addClass('leftTip');
     $d23.addClass('rightTip');
@@ -171,6 +171,7 @@ function removeEastTip(tip) {
     }
     // else raise error
     tip.removeClass(primary);
+    tip.draggable({ disabled: true });
     if (!tip.hasClass(secondary)) {
         tip.removeClass('anyTip');
     }
@@ -265,7 +266,7 @@ $(document).ready(function() {
     $('.domino').each(function(index, domino){
         $domino = $(domino);
         // console.log(index, $domino);
-        $domino.draggable();
+        $domino.draggable({ grid: [ 18, 18 ] });
         $domino.dblclick(function() {
             // console.log("double click");
             rotateMe(this);
@@ -283,6 +284,9 @@ $(document).ready(function() {
             var $d = $(this);
             $('.anyTip').each(function(index, tip){
                 $tip = $(tip);
+                if ($tip.attr('id') == $d.attr('id')) {
+                    return;
+                }
                 var rot = getRotation($tip);
                 if ((rot == 'r0' && $tip.hasClass('rightTip')) ||
                     (rot == 'r180' && $tip.hasClass('leftTip'))) {
