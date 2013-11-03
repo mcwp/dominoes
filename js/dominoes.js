@@ -35,37 +35,8 @@ var channel = (Math.round (Math.random()*100000)).toString();
 var destination = "/topic/dominoes";
 
 var playPoints, scorePoints;
-var GRIDPIX = 37;
 
-function getLotXY(top,left) {
-    //returns an x and a y
-    //given a top and left pixels
-    return {
-        'x': Math.round(left / GRIDPIX),
-        'y': Math.round(top / GRIDPIX)
-    };
-}
 
-function XYPosition(x, y) {
-    return {
-        'top': (GRIDPIX*y).toString(),
-        'left': (GRIDPIX*x).toString()
-    };
-}
-
-function snapToGrid(d){
-    // for now, just snap up and left, no matter where in lot
-    console.log("snap ", d.position());
-    var pos = d.position();
-    var lot = getLotXY(pos.top, pos.left);
-    var pos2 = XYPosition(lot.x, lot.y);
-    console.log("pos is ", pos);
-    console.log("lot is ", lot);
-    console.log("pos2 is ", pos2);
-
-    d.css('left', pos2.left.toString());
-    d.css('top', pos2.top);
-}
 
 function setUpMessaging() {
     // construct the WebSocket location
@@ -118,23 +89,84 @@ function pickDominoes() {
     var d23;
     $d23 = $('#23');
     $d23.css('top', '111');
-    $d23.css('left', '111');
-    // test: see that border rotates with piece
-    // $d23.addClass('bordertest');
+    $d23.css('left', '185');
     // mark the playable tips
     $d23.addClass('leftTip');
     $d23.addClass('rightTip');
     $d23.addClass('anyTip');
     console.log('sumTips before of #23 only:', sumTips());
-    // test: move $d36 next to $d23
-    $d36 = $('#36');
-    $d36.css('top', '111');
-    $d36.css('left', '185');
-    $d23.removeClass('rightTip');
-    $d36.addClass('rightTip');
-    $d36.addClass('anyTip');
-    console.log('sumTips after second domino:', sumTips());
 }
+
+function getOffsets(d1, d2) {
+    var pos1 = d1.position();
+    var pos2 = d2.position();
+    return {
+        'x' : parseInt(pos1.left, 10) - parseInt(pos2.left, 10),
+        'y' : parseInt(pos1.top, 10) - parseInt(pos2.top, 10)
+    };
+}
+
+function getRotation(d) {
+    if (d.hasClass('r90')) {
+        return 'r90';
+    }
+    if (d.hasClass('r180')) {
+        return 'r180';
+    }
+    if (d.hasClass('r270')) {
+        return 'r270';
+    }
+    return 'r0';
+}
+
+function nearEastTip(tip, d) {
+    var pdiff = getOffsets(tip, d);
+    if (pdiff.x>0) {
+        // d is not east of this EastTip
+        return false;
+    }
+    if (Math.abs(pdiff.y) > 10) {
+        // d is not in this row
+        return false;
+    }
+    if (Math.abs(pdiff.x) > 80) {
+        // lost in space
+        return false;
+    }
+    // let's connect
+    removeEastTip(tip);
+    addEastTip(d);
+}
+
+function removeEastTip(tip) {
+    var rot = getRotation(tip);
+    if (rot == 'r0') {
+        primary = 'rightTip';
+        secondary = 'leftTip';
+    }
+    if (rot == 'r180') {
+        primary = 'leftTip';
+        secondary = 'rightTip';
+    }
+    // else raise error
+    tip.removeClass(primary);
+    if (!tip.hasClass(secondary)) {
+        tip.removeClass('anyTip');
+    }
+}
+
+function addEastTip(tip) {
+    var rot = getRotation(tip);
+    if (rot == 'r0') {
+        tip.addClass('rightTip');
+    }
+    if (rot == 'r180') {
+        tip.addClass('leftTip');
+    }
+    tip.addClass('anyTip');
+    // else raise error
+}
+
 
 function sumTips() {
     var score = 0;
@@ -203,8 +235,20 @@ $(document).ready(function() {
             // console.log("mouse down", $(this).position());
         });
         $domino.mouseup(function() {
-            console.log("mouse up", $(this).position());
-            snapToGrid($(this));
+            // console.log("mouse up", $(this).position());
+            var $d = $(this);
+            $('.anyTip').each(function(index, tip){
+                $tip = $(tip);
+                var rot = getRotation($tip);
+                if ((rot == 'r0' && $tip.hasClass('rightTip')) ||
+                    (rot == 'r180' && $tip.hasClass('leftTip'))) {
+                    if (nearEastTip($tip, $d)) {
+                        return;
+                    }
+                } else {
+                    console.log("not an EastTip");
+                }
+            });
         });
     });
 });
