@@ -120,22 +120,43 @@ function getRotation(d) {
 }
 
 function nearEastTip(tip, d) {
-    var pdiff = getOffsets(tip, d);
+    var pdiff = getOffsets(tip, d),
+        dRot = getRotation(d);
     if (pdiff.x>0) {
         // d is not east of this EastTip
-        return false;
-    }
-    if (Math.abs(pdiff.y) > 10) {
-        // d is not in this row
+        // also true for turning corner
         return false;
     }
     if (Math.abs(pdiff.x) > 80) {
         // lost in space
+        // also true for turning a corner
         return false;
     }
-    // let's connect
-    removeEastTip(tip);
-    addEastTip(d);
+    if ((dRot == 'r0') || (dRot == 'r180')) {
+        if (Math.abs(pdiff.y) > 10) {
+            // d is not in this row
+            return false;
+        }
+        // let's connect
+        removeEastTip(tip);
+        addEastTip(d);
+        return true;
+    } else {
+        // turning a corner
+        // console.log("trying to turn a corner?", pdiff, dRot, tip, d);
+        if (Math.abs(pdiff.y) < 10) {
+            // adding a SouthTip
+            removeEastTip(tip);
+            addSouthTip(d);
+            return true;
+        } else if (pdiff.y < 37) {
+            // adding a NorthTip
+            removeEastTip(tip);
+            addNorthTip(d);
+            return true;
+        }
+        return false;
+    }
 }
 
 function removeEastTip(tip) {
@@ -163,10 +184,33 @@ function addEastTip(tip) {
     if (rot == 'r180') {
         tip.addClass('leftTip');
     }
-    tip.addClass('anyTip');
     // else raise error
+    tip.addClass('anyTip');
 }
 
+function addSouthTip(tip) {
+    var rot = getRotation(tip);
+    if (rot == 'r90') {
+        tip.addClass('rightTip');
+    }
+    if (rot == 'r270') {
+        tip.addClass('leftTip');
+    }
+    // else raise error
+    tip.addClass('anyTip');
+}
+
+function addNorthTip(tip) {
+    var rot = getRotation(tip);
+    if (rot == 'r90') {
+        tip.addClass('leftTip');
+    }
+    if (rot == 'r270') {
+        tip.addClass('rightTip');
+    }
+    // else raise error
+    tip.addClass('anyTip');
+}
 
 function sumTips() {
     var score = 0;
@@ -246,7 +290,7 @@ $(document).ready(function() {
                         return;
                     }
                 } else {
-                    console.log("not an EastTip");
+                    // console.log("not an EastTip");
                 }
             });
         });
