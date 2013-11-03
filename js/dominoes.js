@@ -227,38 +227,27 @@ function sumTips() {
     return score;
 }
 
+nextRotation = {
+    'r0'    : 'r90',
+    'r90'   : 'r180',
+    'r180'  : 'r270',
+    'r270'  : 'r0'
+};
+
 function rotateMe(me) {
     var anyRotation = 'r90 r270 r180',
-        po = $(me).position(); // original position
+        mySpin, myNext;
     $me = $(me);
-    // set the desired position before rotation, since 
-    // setting it after is ignored in some rotations
-    if ($me.hasClass('r90')) {
+    mySpin = getRotation($me);
+    myNext = nextRotation[mySpin];
+    if (mySpin != 'r0') {
         $me.removeClass(anyRotation);
-        // console.log("setting 111", $me.data('dx'));
-        // $me.css('left', '111');
-        $me.addClass('r180');
-    } else if ($me.hasClass('r180')) {
-        $me.removeClass(anyRotation);
-        // console.log("setting 93", $me.data('dx'));
-        // $me.css('left', '93');
-        $me.addClass('r270');
-    } else if ($me.hasClass('r270')) {
-        $me.removeClass(anyRotation);
-        // console.log("setting 111", $me.data('dx'));
-        // $me.css('left', '111');
-    } else {
-        // console.log("setting 93", $me.data('dx'));
-        // $me.css('left', '93');
-        $me.addClass('r90');
     }
-    var pr = $me.position(); // rotated position
-    $me.data({
-            dx: Math.round(pr.left - po.left), // delta X
-            dy: Math.round(pr.top - po.top) // delta Y
-        });
-    console.log("offset data is: ", $me.data('dx'), $me.data('dy'));
+    if (myNext != 'r0') {
+        $me.addClass(myNext);
+    }
 }
+
 
 $(document).ready(function() {
     setUpBoneyard();
@@ -266,7 +255,10 @@ $(document).ready(function() {
     $('.domino').each(function(index, domino){
         $domino = $(domino);
         // console.log(index, $domino);
-        $domino.draggable({ grid: [ 18, 18 ] });
+        $domino.draggable({
+            grid: [ 18, 18 ]
+            // drag: function() { send all or each nth position},        
+        });
         $domino.dblclick(function() {
             // console.log("double click");
             rotateMe(this);
