@@ -119,6 +119,81 @@ function getRotation(d) {
     return 'r0';
 }
 
+var cardinal = {
+    'r0'    : {
+        'rightTip'  : 'East',
+        'leftTip'   : 'West'
+    },
+    'r90'   : {
+        'rightTip'  : 'South',
+        'leftTip'   : 'North'
+    },
+    'r180'    : {
+        'rightTip'  : 'West',
+        'leftTip'   : 'East'
+    },
+    'r270'   : {
+        'rightTip'  : 'North',
+        'leftTip'   : 'South'
+    }};
+
+var horizontal = {
+    'r0'    : true,
+    'r90'   : false,
+    'r180'  : true,
+    'r270'  : false
+};
+
+function nearTip(tip, rl, d) {
+    var pdiff = getOffsets(tip, d),
+        dRot = getRotation(d),
+        tRot = getRotation(tip);
+    var qual1 = {
+        'East'  : function(tip, d) {
+            // if d is east of tip, x is negative
+            // and -80 < x < 0 is not too far east 
+            if ((pdiff.x < 0) && (pdiff.x > -82)) {
+                if (horizontal[dRot]) {
+                    // is it in the same row?
+                    if (Math.abs(pdiff.y) < 10) {
+                        return 'East';
+                    }
+                } else { // vertical
+                    if (Math.abs(pdiff.y) < 10) {
+                        // adding a SouthTip
+                        return 'South';
+                    } else if ((pdiff.y > 9) && (pdiff.y < 40)) {
+                        // adding a NorthTip
+                        return 'North';
+                    }
+                }
+            }
+            return 'None';
+        },
+        'South' : function(tip, d) {
+            console.log('qualify South');
+            return 'None';
+        },
+        'West'  : function(tip, d) {
+            console.log('qualify West');
+            return 'None';
+        },
+        'North' : function(tip, d) {
+            console.log('qualify North');
+            return 'None';
+        }
+    };
+    // get the cardinal direction of the tip
+    card = cardinal[tRot][rl];
+    newCard = qual1[card](tip, d);
+    if (newCard != 'None') {
+        removeTip(tip, card);
+        addTip(d, newCard);
+        return true;
+    }
+    return false;
+}
+
 function nearNorthTip(tip, d) {
     var pdiff = getOffsets(tip, d),
         dRot = getRotation(d);
@@ -149,7 +224,7 @@ function nearNorthTip(tip, d) {
             removeNorthTip(tip);
             addEastTip(d);
             return true;
-        } else if (pdiff.x < 40) {
+        } else if (pdiff.x > 0 && pdiff.x < 40) {
             // adding a WestTip
             removeNorthTip(tip);
             addWestTip(d);
@@ -199,20 +274,32 @@ function nearEastTip(tip, d) {
     }
 }
 
-function removeNorthTip(tip) {
-    var rot = getRotation(tip);
-    if (rot == 'r90') {
-        primary = 'leftTip';
-        secondary = 'rightTip';
+var whichTips = {
+    'r0'    : {
+        'East'  : ['rightTip', 'leftTip'],
+        'West'  : ['leftTip', 'rightTip']
+    },
+    'r90'   : {
+        'North' : ['leftTip', 'rightTip'],
+        'South' : ['rightTip', 'leftTip']
+    },
+    'r180'  : {
+        'West'  : ['rightTip', 'leftTip'],
+        'East'  : ['leftTip', 'rightTip']
+    },
+    'r270'  : {
+        'South' : ['leftTip', 'rightTip'],
+        'North' : ['rightTip', 'leftTip']
     }
-    if (rot == 'r270') {
-        primary = 'rightTip';
-        secondary = 'leftTip';
-    }
-    // else raise error
-    tip.removeClass(primary);
+}
+
+function removeTip(tip, card) {
+    var rot = getRotation(tip),
+        wt = whichTips[rot][card];
+
+    tip.removeClass(wt[0]);
     tip.draggable({ disabled: true });
-    if (!tip.hasClass(secondary)) {
+    if (!tip.hasClass(wt[1])) {
         tip.removeClass('anyTip');
     }
 }
@@ -235,16 +322,11 @@ function removeEastTip(tip) {
     }
 }
 
-function addWestTip(tip) {
-    var rot = getRotation(tip);
-    if (rot == 'r0') {
-        tip.addClass('leftTip');
-    }
-    if (rot == 'r180') {
-        tip.addClass('rightTip');
-    }
-    // else raise error
-    tip.addClass('anyTip');
+function addTip(d, newCard) {
+    var rot = getRotation(d),
+        wt = whichTips[rot][newCard];
+    d.addClass(wt[0]);
+    d.addClass('anyTip');
 }
 
 function addEastTip(tip) {
@@ -297,7 +379,7 @@ function sumTips() {
     return score;
 }
 
-nextRotation = {
+var nextRotation = {
     'r0'    : 'r90',
     'r90'   : 'r180',
     'r180'  : 'r270',
@@ -346,21 +428,19 @@ $(document).ready(function() {
             var $d = $(this);
             $('.anyTip').each(function(index, tip){
                 $tip = $(tip);
+                console.log("mouseup called", index);
                 if ($tip.attr('id') == $d.attr('id')) {
                     return;
                 }
-                var rot = getRotation($tip);
-                if ((rot == 'r0' && $tip.hasClass('rightTip')) ||
-                    (rot == 'r180' && $tip.hasClass('leftTip'))) {
-                    if (nearEastTip($tip, $d)) {
-                        return;
-                    }
-                } else if ((rot == 'r90' && $tip.hasClass('leftTip')) ||
-                    ((rot == 'r270') && $tip.hasClass('rightTip'))) {
-                    if (nearNorthTip($tip, $d)) {
-                        return;
-                    }
+                var placed = false;
+                if ($tip.hasClass('rightTip')) {
+                    placed = nearTip($tip, 'rightTip', $d);
                 }
+                if ($tip.hasClass('leftTip')) {
+                    placed = nearTip($tip, 'leftTip', $d) || placed;
+                }
+                // if placed, return false to stop .each() loop
+                return !placed;
             });
         });
     });
