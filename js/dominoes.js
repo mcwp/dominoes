@@ -148,6 +148,9 @@ function nearTip(tip, rl, d) {
     var pdiff = getOffsets(tip, d),
         dRot = getRotation(d),
         tRot = getRotation(tip);
+
+    // surely these four cases can be 
+    // combined...
     var qual1 = {
         'East'  : function(tip, d) {
             // if d is east of tip, x is negative
@@ -171,17 +174,68 @@ function nearTip(tip, rl, d) {
             return 'None';
         },
         'South' : function(tip, d) {
-            console.log('qualify South');
+            // if d is south of tip, y is negative
+            // and -82 < y < 0 is not too far south 
+            if ((pdiff.y < 0) && (pdiff.y > -82)) {
+                if (!horizontal[dRot]) {
+                    // is it in the same col?
+                    if (Math.abs(pdiff.x) < 10) {
+                        return 'South';
+                    }
+                } else { // horizontal
+                    if (Math.abs(pdiff.x) < 10) {
+                        // adding an EastTip
+                        return 'East';
+                    } else if ((pdiff.x > 9) && (pdiff.x < 40)) {
+                        // adding a WestTip
+                        return 'West';
+                    }
+                }
+            }
             return 'None';
         },
         'West'  : function(tip, d) {
-            console.log('qualify West');
+            // if d is west of tip, x is positive
+            // and 80 > x > 0 is not too far west 
+            if ((pdiff.x > 0) && (pdiff.x < 82)) {
+                if (horizontal[dRot]) {
+                    // is it in the same row?
+                    if (Math.abs(pdiff.y) < 10) {
+                        return 'West';
+                    }
+                } else { // vertical
+                    if (Math.abs(pdiff.y) < 10) {
+                        // adding a SouthTip
+                        return 'South';
+                    } else if ((pdiff.y > 9) && (pdiff.y < 40)) {
+                        // adding a NorthTip
+                        return 'North';
+                    }
+                }
+            }
             return 'None';
         },
         'North' : function(tip, d) {
-            console.log('qualify North');
+            // if d is north of tip, y is positive
+            // and 82 > y > 0 is not too far north 
+            if ((pdiff.y > 0) && (pdiff.y < 82)) {
+                if (!horizontal[dRot]) {
+                    // is it in the same col?
+                    if (Math.abs(pdiff.x) < 10) {
+                        return 'North';
+                    }
+                } else { // horizontal
+                    if (Math.abs(pdiff.x) < 10) {
+                        // adding an EastTip
+                        return 'East';
+                    } else if ((pdiff.x > 9) && (pdiff.x < 40)) {
+                        // adding a WestTip
+                        return 'West';
+                    }
+                }
+            }
             return 'None';
-        }
+        },
     };
     // get the cardinal direction of the tip
     card = cardinal[tRot][rl];
@@ -194,85 +248,6 @@ function nearTip(tip, rl, d) {
     return false;
 }
 
-function nearNorthTip(tip, d) {
-    var pdiff = getOffsets(tip, d),
-        dRot = getRotation(d);
-    if (pdiff.y<0) {
-        // d is not north of this NorthTip
-        // also true for turning corner
-        return false;
-    }
-    if (Math.abs(pdiff.y) > 80) {
-        // lost in space
-        // also true for turning a corner
-        return false;
-    }
-    if ((dRot == 'r90') || (dRot == 'r270')) {
-        if (Math.abs(pdiff.x) > 10) {
-            // d is not in this column
-            return false;
-        }
-        // let's connect
-        removeNorthTip(tip);
-        addNorthTip(d);
-        return true;
-    } else {
-        // turning a corner
-        // console.log("trying to turn a corner?", pdiff, dRot, tip, d);
-        if (Math.abs(pdiff.x) < 10) {
-            // adding a EastTip
-            removeNorthTip(tip);
-            addEastTip(d);
-            return true;
-        } else if (pdiff.x > 0 && pdiff.x < 40) {
-            // adding a WestTip
-            removeNorthTip(tip);
-            addWestTip(d);
-            return true;
-        }
-        return false;
-    }
-}
-
-function nearEastTip(tip, d) {
-    var pdiff = getOffsets(tip, d),
-        dRot = getRotation(d);
-    if (pdiff.x>0) {
-        // d is not east of this EastTip
-        // also true for turning corner
-        return false;
-    }
-    if (Math.abs(pdiff.x) > 80) {
-        // lost in space
-        // also true for turning a corner
-        return false;
-    }
-    if ((dRot == 'r0') || (dRot == 'r180')) {
-        if (Math.abs(pdiff.y) > 10) {
-            // d is not in this row
-            return false;
-        }
-        // let's connect
-        removeEastTip(tip);
-        addEastTip(d);
-        return true;
-    } else {
-        // turning a corner
-        // console.log("trying to turn a corner?", pdiff, dRot, tip, d);
-        if (Math.abs(pdiff.y) < 10) {
-            // adding a SouthTip
-            removeEastTip(tip);
-            addSouthTip(d);
-            return true;
-        } else if (pdiff.y < 37) {
-            // adding a NorthTip
-            removeEastTip(tip);
-            addNorthTip(d);
-            return true;
-        }
-        return false;
-    }
-}
 
 var whichTips = {
     'r0'    : {
@@ -291,7 +266,7 @@ var whichTips = {
         'South' : ['leftTip', 'rightTip'],
         'North' : ['rightTip', 'leftTip']
     }
-}
+};
 
 function removeTip(tip, card) {
     var rot = getRotation(tip),
@@ -304,65 +279,11 @@ function removeTip(tip, card) {
     }
 }
 
-function removeEastTip(tip) {
-    var rot = getRotation(tip);
-    if (rot == 'r0') {
-        primary = 'rightTip';
-        secondary = 'leftTip';
-    }
-    if (rot == 'r180') {
-        primary = 'leftTip';
-        secondary = 'rightTip';
-    }
-    // else raise error
-    tip.removeClass(primary);
-    tip.draggable({ disabled: true });
-    if (!tip.hasClass(secondary)) {
-        tip.removeClass('anyTip');
-    }
-}
-
 function addTip(d, newCard) {
     var rot = getRotation(d),
         wt = whichTips[rot][newCard];
     d.addClass(wt[0]);
     d.addClass('anyTip');
-}
-
-function addEastTip(tip) {
-    var rot = getRotation(tip);
-    if (rot == 'r0') {
-        tip.addClass('rightTip');
-    }
-    if (rot == 'r180') {
-        tip.addClass('leftTip');
-    }
-    // else raise error
-    tip.addClass('anyTip');
-}
-
-function addSouthTip(tip) {
-    var rot = getRotation(tip);
-    if (rot == 'r90') {
-        tip.addClass('rightTip');
-    }
-    if (rot == 'r270') {
-        tip.addClass('leftTip');
-    }
-    // else raise error
-    tip.addClass('anyTip');
-}
-
-function addNorthTip(tip) {
-    var rot = getRotation(tip);
-    if (rot == 'r90') {
-        tip.addClass('leftTip');
-    }
-    if (rot == 'r270') {
-        tip.addClass('rightTip');
-    }
-    // else raise error
-    tip.addClass('anyTip');
 }
 
 function sumTips() {
