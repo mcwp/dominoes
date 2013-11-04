@@ -119,6 +119,46 @@ function getRotation(d) {
     return 'r0';
 }
 
+function nearNorthTip(tip, d) {
+    var pdiff = getOffsets(tip, d),
+        dRot = getRotation(d);
+    if (pdiff.y<0) {
+        // d is not north of this NorthTip
+        // also true for turning corner
+        return false;
+    }
+    if (Math.abs(pdiff.y) > 80) {
+        // lost in space
+        // also true for turning a corner
+        return false;
+    }
+    if ((dRot == 'r90') || (dRot == 'r270')) {
+        if (Math.abs(pdiff.x) > 10) {
+            // d is not in this column
+            return false;
+        }
+        // let's connect
+        removeNorthTip(tip);
+        addNorthTip(d);
+        return true;
+    } else {
+        // turning a corner
+        // console.log("trying to turn a corner?", pdiff, dRot, tip, d);
+        if (Math.abs(pdiff.x) < 10) {
+            // adding a EastTip
+            removeNorthTip(tip);
+            addEastTip(d);
+            return true;
+        } else if (pdiff.x < 40) {
+            // adding a WestTip
+            removeNorthTip(tip);
+            addWestTip(d);
+            return true;
+        }
+        return false;
+    }
+}
+
 function nearEastTip(tip, d) {
     var pdiff = getOffsets(tip, d),
         dRot = getRotation(d);
@@ -159,6 +199,24 @@ function nearEastTip(tip, d) {
     }
 }
 
+function removeNorthTip(tip) {
+    var rot = getRotation(tip);
+    if (rot == 'r90') {
+        primary = 'leftTip';
+        secondary = 'rightTip';
+    }
+    if (rot == 'r270') {
+        primary = 'rightTip';
+        secondary = 'leftTip';
+    }
+    // else raise error
+    tip.removeClass(primary);
+    tip.draggable({ disabled: true });
+    if (!tip.hasClass(secondary)) {
+        tip.removeClass('anyTip');
+    }
+}
+
 function removeEastTip(tip) {
     var rot = getRotation(tip);
     if (rot == 'r0') {
@@ -175,6 +233,18 @@ function removeEastTip(tip) {
     if (!tip.hasClass(secondary)) {
         tip.removeClass('anyTip');
     }
+}
+
+function addWestTip(tip) {
+    var rot = getRotation(tip);
+    if (rot == 'r0') {
+        tip.addClass('leftTip');
+    }
+    if (rot == 'r180') {
+        tip.addClass('rightTip');
+    }
+    // else raise error
+    tip.addClass('anyTip');
 }
 
 function addEastTip(tip) {
@@ -262,7 +332,7 @@ $(document).ready(function() {
         $domino.dblclick(function() {
             // console.log("double click");
             rotateMe(this);
-            console.log("after rotate, position is: ", $(this).position());
+            // console.log("after rotate, position is: ", $(this).position());
             // Read the position
             // var pos = $(this).adjustedPosition();    
             // console.log("adjusted pos is: ", pos);
@@ -285,8 +355,11 @@ $(document).ready(function() {
                     if (nearEastTip($tip, $d)) {
                         return;
                     }
-                } else {
-                    // console.log("not an EastTip");
+                } else if ((rot == 'r90' && $tip.hasClass('leftTip')) ||
+                    ((rot == 'r270') && $tip.hasClass('rightTip'))) {
+                    if (nearNorthTip($tip, $d)) {
+                        return;
+                    }
                 }
             });
         });
