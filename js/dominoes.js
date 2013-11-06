@@ -144,6 +144,44 @@ var horizontal = {
     'r270'  : false
 };
 
+function horizontalTip(pdiff, dRot, card) {
+    // Is the piece close enough to an East or West tip to connect?
+    if (horizontal[dRot]) {
+        // is it in the same row?
+        if (Math.abs(pdiff.y) < 10) {
+            return card;
+        }
+    } else { // vertical
+        if (Math.abs(pdiff.y) < 10) {
+            // adding a SouthTip
+            return 'South';
+        } else if ((pdiff.y > 9) && (pdiff.y < 40)) {
+            // adding a NorthTip
+            return 'North';
+        }
+    }
+    return 'None';
+}
+
+function verticalTip(pdiff, dRot, card) {
+    // Is the piece close enough to a North or South tip to connect?
+    if (!horizontal[dRot]) {
+        // is it in the same col?
+        if (Math.abs(pdiff.x) < 10) {
+            return card;
+        }
+    } else { // horizontal
+        if (Math.abs(pdiff.x) < 10) {
+            // adding an EastTip
+            return 'East';
+        } else if ((pdiff.x > 9) && (pdiff.x < 40)) {
+            // adding a WestTip
+            return 'West';
+        }
+    }
+    return 'None';
+}
+
 function nearTip(tip, rl, d) {
     var pdiff = getOffsets(tip, d),
         dRot = getRotation(d),
@@ -155,91 +193,42 @@ function nearTip(tip, rl, d) {
         'East'  : function(tip, d) {
             // if d is east of tip, x is negative
             // and -80 < x < 0 is not too far east 
-            if ((pdiff.x < 0) && (pdiff.x > -82)) {
-                if (horizontal[dRot]) {
-                    // is it in the same row?
-                    if (Math.abs(pdiff.y) < 10) {
-                        return 'East';
-                    }
-                } else { // vertical
-                    if (Math.abs(pdiff.y) < 10) {
-                        // adding a SouthTip
-                        return 'South';
-                    } else if ((pdiff.y > 9) && (pdiff.y < 40)) {
-                        // adding a NorthTip
-                        return 'North';
-                    }
-                }
+            if ((pdiff.x <= 0) && (pdiff.x > -82)) {
+                // rest of this is equiv to West, aside from
+                // the return of 'East' instead of 'West'
+                return horizontalTip(pdiff, dRot, 'East');
             }
             return 'None';
         },
         'South' : function(tip, d) {
             // if d is south of tip, y is negative
             // and -82 < y < 0 is not too far south 
-            if ((pdiff.y < 0) && (pdiff.y > -82)) {
-                if (!horizontal[dRot]) {
-                    // is it in the same col?
-                    if (Math.abs(pdiff.x) < 10) {
-                        return 'South';
-                    }
-                } else { // horizontal
-                    if (Math.abs(pdiff.x) < 10) {
-                        // adding an EastTip
-                        return 'East';
-                    } else if ((pdiff.x > 9) && (pdiff.x < 40)) {
-                        // adding a WestTip
-                        return 'West';
-                    }
-                }
+            if ((pdiff.y <= 0) && (pdiff.y > -82)) {
+                // rest is equiv to North
+                return verticalTip(pdiff, dRot, 'South');
             }
             return 'None';
         },
         'West'  : function(tip, d) {
             // if d is west of tip, x is positive
             // and 80 > x > 0 is not too far west 
-            if ((pdiff.x > 0) && (pdiff.x < 82)) {
-                if (horizontal[dRot]) {
-                    // is it in the same row?
-                    if (Math.abs(pdiff.y) < 10) {
-                        return 'West';
-                    }
-                } else { // vertical
-                    if (Math.abs(pdiff.y) < 10) {
-                        // adding a SouthTip
-                        return 'South';
-                    } else if ((pdiff.y > 9) && (pdiff.y < 40)) {
-                        // adding a NorthTip
-                        return 'North';
-                    }
-                }
+            if ((pdiff.x >= 0) && (pdiff.x < 82)) {
+                return horizontalTip(pdiff, dRot, 'West');
             }
             return 'None';
         },
         'North' : function(tip, d) {
             // if d is north of tip, y is positive
             // and 82 > y > 0 is not too far north 
-            if ((pdiff.y > 0) && (pdiff.y < 82)) {
-                if (!horizontal[dRot]) {
-                    // is it in the same col?
-                    if (Math.abs(pdiff.x) < 10) {
-                        return 'North';
-                    }
-                } else { // horizontal
-                    if (Math.abs(pdiff.x) < 10) {
-                        // adding an EastTip
-                        return 'East';
-                    } else if ((pdiff.x > 9) && (pdiff.x < 40)) {
-                        // adding a WestTip
-                        return 'West';
-                    }
-                }
+            if ((pdiff.y >= 0) && (pdiff.y < 82)) {
+                return verticalTip(pdiff, dRot, 'North');
             }
             return 'None';
         },
     };
     // get the cardinal direction of the tip
-    card = cardinal[tRot][rl];
-    newCard = qual1[card](tip, d);
+    var card = cardinal[tRot][rl];
+    var newCard = qual1[card](tip, d);
     if (newCard != 'None') {
         removeTip(tip, card);
         addTip(d, newCard);
@@ -329,7 +318,7 @@ $(document).ready(function() {
         $domino = $(domino);
         // console.log(index, $domino);
         $domino.draggable({
-            grid: [ 18, 18 ]
+            grid: [ 9, 9 ]
             // drag: function() { send all or each nth position},        
         });
         $domino.dblclick(function() {

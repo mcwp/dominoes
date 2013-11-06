@@ -22,34 +22,13 @@ div {
     -ms-transform:      rotate(270deg);
     transform:  rotate(270deg);    
 }
-.bordertest2 {
-    border-style: solid;
-    border-width: 5px;
-    border-top-color: red;
-    border-bottom-color: orange;
-}
-.bordertest {
-    border-style: solid;
-    border-left-color: blue;
-    border-right-color: green;
-    border-top-color: red;
-    border-bottom-color: yellow;
-    border-width: 3px;
-}
-.leftTip {
-    border-style: solid;
+
+.doubleTip {
     border-radius: 10px;
-    border-top-width: 0;
-    border-bottom-width: 0;
-    border-left-color: green;
-    border-left-width: 3px;
+    box-shadow: 0 0 2px 4px #06F;
 }
-.rightTip {
-    border-style: solid;
+.leftTip, .rightTip {
     border-radius: 10px;
-    border-top-width: 0;
-    border-bottom-width: 0;
-    border-right-color: green;
-    border-right-width: 3px;
+    box-shadow: 0 0 2px 4px #0A0;
 }
 
