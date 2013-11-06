@@ -36,6 +36,7 @@ var destination = "/topic/dominoes";
 
 var playPoints, scorePoints;
 
+var anyRotation = 'r90 r270 r180';
 
 
 function setUpMessaging() {
@@ -122,19 +123,23 @@ function getRotation(d) {
 var cardinal = {
     'r0'    : {
         'rightTip'  : 'East',
-        'leftTip'   : 'West'
+        'leftTip'   : 'West',
+        'doubleTip' : 'North'
     },
     'r90'   : {
         'rightTip'  : 'South',
-        'leftTip'   : 'North'
+        'leftTip'   : 'North',
+        'doubleTip' : 'East'
     },
     'r180'    : {
         'rightTip'  : 'West',
-        'leftTip'   : 'East'
+        'leftTip'   : 'East',
+        'doubleTip' : 'South'
     },
     'r270'   : {
         'rightTip'  : 'North',
-        'leftTip'   : 'South'
+        'leftTip'   : 'South',
+        'doubleTip' : 'West'
     }};
 
 var horizontal = {
@@ -182,13 +187,54 @@ function verticalTip(pdiff, dRot, card) {
     return 'None';
 }
 
-function nearTip(tip, rl, d) {
+function teeDouble(d, card) {
+    // since this is a double, play it as a tee
+    // card is direction of old tip
+    var doubleCard = teePosition[card].r;
+
+    d.addClass('doubleTip');
+    d.addClass('anyTip');
+    d.removeClass(anyRotation);
+    if (doubleCard !== 'r0') {
+        d.addClass(doubleCard);
+    }
+}
+
+function isDouble(d) {
+    var l = parseInt(d.attr('lPips'), 10),
+        r = parseInt(d.attr('rPips'), 10);
+    return (l==r);
+}
+
+var teePosition = {
+    'East'  : {
+        // add x, y and then rotate to vertical
+        x : -18,
+        y : 0,
+        r : 'r90'
+    },
+    'South' : {
+        x : 18,
+        y : -81,
+        r : 'r180'
+    },
+    'West'  : {
+        x : 36,
+        y : 18,
+        r : 'r270'
+    },
+    'North' : {
+        x : 18,
+        y : 63,
+        r : 'r0'
+    }
+};
+
+function nearTip(tip, rld, d) {
     var pdiff = getOffsets(tip, d),
         dRot = getRotation(d),
         tRot = getRotation(tip);
 
-    // surely these four cases can be 
-    // combined...
     var qual1 = {
         'East'  : function(tip, d) {
             // if d is east of tip, x is negative
@@ -227,11 +273,16 @@ function nearTip(tip, rl, d) {
         },
     };
     // get the cardinal direction of the tip
-    var card = cardinal[tRot][rl];
+    var card = cardinal[tRot][rld];
     var newCard = qual1[card](tip, d);
     if (newCard != 'None') {
         removeTip(tip, card);
-        addTip(d, newCard);
+        if (isDouble(d)) {
+            // ignore newCard, doubles are special
+            teeDouble(d, card);
+        } else {
+            addTip(d, newCard);
+        }
         return true;
     }
     return false;
@@ -258,14 +309,21 @@ var whichTips = {
 };
 
 function removeTip(tip, card) {
-    var rot = getRotation(tip),
-        wt = whichTips[rot][card];
+    var rot = getRotation(tip);
 
-    tip.removeClass(wt[0]);
-    tip.draggable({ disabled: true });
-    if (!tip.hasClass(wt[1])) {
-        tip.removeClass('anyTip');
+    if (tip.hasClass('doubleTip')) {
+        tip.removeClass('doubleTip');
+        // after extending past the tee, the tips are playable, too
+        tip.addClass('leftTip');
+        tip.addClass('rightTip');
+    } else {
+        var wt = whichTips[rot][card];
+        tip.removeClass(wt[0]);
+        if (!tip.hasClass(wt[1])) {
+            tip.removeClass('anyTip');
+        }
     }
+    tip.draggable({ disabled: true });
 }
 
 function addTip(d, newCard) {
@@ -296,9 +354,10 @@ var nextRotation = {
     'r270'  : 'r0'
 };
 
+
 function rotateMe(me) {
-    var anyRotation = 'r90 r270 r180',
-        mySpin, myNext;
+    var mySpin, myNext;
+
     $me = $(me);
     mySpin = getRotation($me);
     myNext = nextRotation[mySpin];
@@ -338,15 +397,22 @@ $(document).ready(function() {
             var $d = $(this);
             $('.anyTip').each(function(index, tip){
                 $tip = $(tip);
-                console.log("mouseup called", index);
                 if ($tip.attr('id') == $d.attr('id')) {
+                    // don't match with myself
                     return;
                 }
                 var placed = false;
+                if ($tip.hasClass('doubleTip')) {
+                    placed = nearTip($tip, 'doubleTip', $d);
+                    // mutually exclusive with right and left
+                    return !placed;
+                }
                 if ($tip.hasClass('rightTip')) {
                     placed = nearTip($tip, 'rightTip', $d);
                 }
                 if ($tip.hasClass('leftTip')) {
+                    // the first piece played will have both r & l tips
+                    // likewise a double after both long edges are played
                     placed = nearTip($tip, 'leftTip', $d) || placed;
                 }
                 // if placed, return false to stop .each() loop
