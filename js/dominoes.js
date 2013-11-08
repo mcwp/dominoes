@@ -190,7 +190,9 @@ function verticalTip(pdiff, dRot, card) {
 function teeDouble(d, card) {
     // since this is a double, play it as a tee
     // card is direction of old tip
-    var doubleCard = teePosition[card].r;
+    // use this to encode the initial orthogonal 
+    // direction of play for doubles, see cardinal array
+    var doubleCard = teeRotation[card].r;
 
     d.addClass('doubleTip');
     d.addClass('anyTip');
@@ -206,7 +208,7 @@ function isDouble(d) {
     return (l==r);
 }
 
-var teePosition = {
+var teeRotation = {
     'East'  : {
         // add x, y and then rotate to vertical
         x : -18,
@@ -230,10 +232,37 @@ var teePosition = {
     }
 };
 
+// this pdiff stuff is too loosey goosey
+// for any cardinal direction, there are exactly
+// three possible positions for an orthoganal piece,
+// with the center one being for doubles only, and
+// one and only one possible position for an aligned
+// piece.  So the nearTip question is just whether 
+// or not the position of d is close enough to one of
+// possible targets
+
+
+var targetSpots = {
+    'East'  : {
+        'East'  : {top: 0, left: 72},
+        'tee'   : {top: -18, left: 72},
+        'North' : {top: -36, left: 72},
+        'South' : {top: 0, left: 72}
+    },
+    'West'  : {
+        'West'  : {top: 0, left: -36},
+        'tee'   : {top: -18, left: -36},
+        'North' : {top: -36, left: -36},
+        'South' : {top: 0, left: -36}
+    }
+};
+
+
 function nearTip(tip, rld, d) {
     var pdiff = getOffsets(tip, d),
         dRot = getRotation(d),
         tRot = getRotation(tip);
+
 
     var qual1 = {
         'East'  : function(tip, d) {
@@ -354,6 +383,19 @@ var nextRotation = {
     'r270'  : 'r0'
 };
 
+function goVertical(pos) {
+    return {
+        top : pos.top + 18,
+        left: pos.left - 18
+    };
+}
+
+function goHorizontal(pos) {
+    return {
+        top : pos.top - 18,
+        left: pos.left + 18
+    };
+}
 
 function rotateMe(me) {
     var mySpin, myNext;
@@ -361,12 +403,18 @@ function rotateMe(me) {
     $me = $(me);
     mySpin = getRotation($me);
     myNext = nextRotation[mySpin];
-    if (mySpin != 'r0') {
-        $me.removeClass(anyRotation);
+    $me.removeClass(anyRotation);
+    pos = $me.position();
+    if (horizontal[myNext]) {
+        $me.css(goHorizontal(pos));
+    } else {
+        //console.log("leaving horizontal rotation, pos = ", pos);
+        $me.css(goVertical(pos));
     }
     if (myNext != 'r0') {
         $me.addClass(myNext);
     }
+    console.log("after rotation, position is ", $me.position());
 }
 
 
