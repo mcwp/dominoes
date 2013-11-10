@@ -75,6 +75,7 @@ function setUpBoneyard() {
         $(newDomi).append($(pic));
         $(newDomi).attr('lPips', dominoes[i][1]);
         $(newDomi).attr('rPips', dominoes[i][2]);
+        $(newDomi).css('top', i.toString());
     }
 }
 
@@ -101,6 +102,7 @@ function pickDominoes() {
 function getOffsets(d1, d2) {
     var pos1 = d1.position();
     var pos2 = d2.position();
+    console.log(pos1, pos2);
     return {
         'x' : parseInt(pos1.left, 10) - parseInt(pos2.left, 10),
         'y' : parseInt(pos1.top, 10) - parseInt(pos2.top, 10)
@@ -119,6 +121,7 @@ function getRotation(d) {
     }
     return 'r0';
 }
+
 
 var cardinal = {
     'r0'    : {
@@ -141,6 +144,107 @@ var cardinal = {
         'leftTip'   : 'South',
         'doubleTip' : 'West'
     }};
+
+
+var targetSpots = {
+    'East'  : {
+        'North' : {y: -36, x: 72},
+        'East'  : {y: 0, x: 72},
+        'South' : {y: 0, x: 72},
+    //  'West'  : {y: 0, x: 36},
+        'tee'   : {y: -18, x: 72}
+    },
+    'South' : {
+    //  'North' : {y: -36, x: 0},
+        'East'  : {y: 72, x: 0},
+        'South' : {y: 72, x: 0},
+        'West'  : {y: 72, x: -36},
+        'tee'   : {y: 72, x: -18}
+    },
+    'West'  : {
+        'North' : {y: -36, x: -36},
+    //  'East'  : {y: 0, x: -36},
+        'South' : {y: 0, x: -36},
+        'West'  : {y: 0, x: -72},
+        'tee'   : {y: -18, x: -36}
+    },
+    'North'  : {
+        'North' : {y: -72, x: 0},
+        'East'  : {y: -36, x: 0},
+    //  'South' : {y: -36, x: 0},
+        'West'  : {y: -36, x: -36},
+        'tee'   : {y: -36, x: -18}
+    }
+};
+
+function close(point, target) {
+    var lt = target-10,
+        gt = target+10;
+    return (lt <= point && point <= gt);
+}
+
+var overlap = {
+    // true but unnecessary if iterating via .each 
+    // and the overlaps are omitted from the objlit
+    'East' : function (newCard) {
+        return (newCard == 'West');
+    },
+    'South': function (newCard) {
+        return (newCard == 'North');
+    },
+    'West': function (newCard) {
+        return (newCard == 'East');
+    },
+    'North': function (newCard) {
+        return (newCard == 'South');
+    }
+};
+
+function matchTarget(card, pDiffs, target) {
+    // should/could handle pip matching here, too?
+    if (close(pDiffs.y, targetSpots[card][target].y) &&
+        close(pDiffs.x, targetSpots[card][target].x)) {
+            return target;
+    }
+    return 'None';
+}
+
+
+
+function newNear(tip, rld, d) {
+    var pDiffs = getOffsets(d, tip),
+        dRot = getRotation(d),
+        tRot = getRotation(tip),
+        card = cardinal[tRot][rld];
+
+    newCard = 'None';
+    if (horizontal[tRot] == horizontal[dRot]) {
+        // try to continue in same direction
+        newCard = matchTarget(card, pDiffs, card);
+        // oops - this match could be with a double, darn...
+        // maybe that needs to be handled in the pip matching instead...
+    } else {
+        $.each(targetSpots[card], function(key) {
+            if (key == card) {
+                // skip
+                return true;
+            } else if (key == 'tee') {
+                if (isDouble(d)) {
+                    newCard = matchTarget(card, pDiffs, 'tee');
+                    return False;
+                    // match or no match, we are done with .each
+                    // if d is a double
+                } // else newCard will still be None, loop continues
+            } else {
+                newCard = matchTarget(card, pDiffs, key);
+            }
+            return (newCard == 'None');
+            // return true == continue looping
+        });
+    }
+    console.log("newCard is ", newCard);
+    // after match, do connection?  as with old near.
+}
 
 var horizontal = {
     'r0'    : true,
@@ -200,6 +304,7 @@ function teeDouble(d, card) {
     if (doubleCard !== 'r0') {
         d.addClass(doubleCard);
     }
+    console.log("tee double position is ", doubleCard, d.position());
 }
 
 function isDouble(d) {
@@ -211,23 +316,15 @@ function isDouble(d) {
 var teeRotation = {
     'East'  : {
         // add x, y and then rotate to vertical
-        x : -18,
-        y : 0,
         r : 'r90'
     },
     'South' : {
-        x : 18,
-        y : -81,
         r : 'r180'
     },
     'West'  : {
-        x : 36,
-        y : 18,
         r : 'r270'
     },
     'North' : {
-        x : 18,
-        y : 63,
         r : 'r0'
     }
 };
@@ -242,20 +339,6 @@ var teeRotation = {
 // possible targets
 
 
-var targetSpots = {
-    'East'  : {
-        'East'  : {top: 0, left: 72},
-        'tee'   : {top: -18, left: 72},
-        'North' : {top: -36, left: 72},
-        'South' : {top: 0, left: 72}
-    },
-    'West'  : {
-        'West'  : {top: 0, left: -36},
-        'tee'   : {top: -18, left: -36},
-        'North' : {top: -36, left: -36},
-        'South' : {top: 0, left: -36}
-    }
-};
 
 
 function nearTip(tip, rld, d) {
@@ -316,6 +399,7 @@ function nearTip(tip, rld, d) {
     }
     return false;
 }
+
 
 
 var whichTips = {
@@ -414,7 +498,7 @@ function rotateMe(me) {
     if (myNext != 'r0') {
         $me.addClass(myNext);
     }
-    console.log("after rotation, position is ", $me.position());
+    console.log("after rotation, position is ", myNext, $me.position());
 }
 
 
