@@ -152,28 +152,32 @@ var targetSpots = {
         'East'  : {y: 0, x: 72},
         'South' : {y: 0, x: 72},
     //  'West'  : {y: 0, x: 36},
-        'tee'   : {y: -18, x: 72}
+        'tee'   : {y: -18, x: 72},
+        'unTee' : {y: 18, x: 36}
     },
     'South' : {
     //  'North' : {y: -36, x: 0},
         'East'  : {y: 72, x: 0},
         'South' : {y: 72, x: 0},
         'West'  : {y: 72, x: -36},
-        'tee'   : {y: 72, x: -18}
+        'tee'   : {y: 72, x: -18},
+        'unTee' : {y: 36, x: 18}
     },
     'West'  : {
         'North' : {y: -36, x: -36},
     //  'East'  : {y: 0, x: -36},
         'South' : {y: 0, x: -36},
         'West'  : {y: 0, x: -72},
-        'tee'   : {y: -18, x: -36}
+        'tee'   : {y: -18, x: -36},
+        'unTee' : {y: 18, x: -72}
     },
     'North'  : {
         'North' : {y: -72, x: 0},
         'East'  : {y: -36, x: 0},
     //  'South' : {y: -36, x: 0},
         'West'  : {y: -36, x: -36},
-        'tee'   : {y: -36, x: -18}
+        'tee'   : {y: -36, x: -18},
+        'unTee' : {y: -72, x: 18}
     }
 };
 
@@ -204,7 +208,7 @@ function matchTarget(card, pDiffs, target) {
     // should/could handle pip matching here, too?
     if (close(pDiffs.y, targetSpots[card][target].y) &&
         close(pDiffs.x, targetSpots[card][target].x)) {
-            return target;
+        return target;
     }
     return 'None';
 }
@@ -218,23 +222,25 @@ function newNear(tip, rld, d) {
         card = cardinal[tRot][rld];
 
     newCard = 'None';
+    dDouble = isDouble(d);
     if (horizontal[tRot] == horizontal[dRot]) {
         // try to continue in same direction
+        if (dDouble || (rld == 'doubleTip')) {
+            // give up.  Any double means they should be
+            // orthoganal, not aligned
+            return 'None';
+        }
         newCard = matchTarget(card, pDiffs, card);
-        // oops - this match could be with a double, darn...
-        // maybe that needs to be handled in the pip matching instead...
+    // else know they are orthoganal, not aligned
+    } else if (rld == 'doubleTip') {
+            newCard = matchTarget(card, pDiffs, 'unTee');
+    } else if (isDouble(d)) {
+            newCard = matchTarget(card, pDiffs, 'tee');
     } else {
         $.each(targetSpots[card], function(key) {
-            if (key == card) {
+            if (key == card || key == 'tee' || key == 'unTee') {
                 // skip
                 return true;
-            } else if (key == 'tee') {
-                if (isDouble(d)) {
-                    newCard = matchTarget(card, pDiffs, 'tee');
-                    return False;
-                    // match or no match, we are done with .each
-                    // if d is a double
-                } // else newCard will still be None, loop continues
             } else {
                 newCard = matchTarget(card, pDiffs, key);
             }
@@ -482,6 +488,9 @@ function goHorizontal(pos) {
 }
 
 function rotateMe(me) {
+    // Instead of simply spinning, which is nice but confusing
+    // for placing dominoes, spin such that my top/left position
+    // remains constant in all four cardinal directions
     var mySpin, myNext;
 
     $me = $(me);
