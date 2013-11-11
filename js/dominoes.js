@@ -122,6 +122,21 @@ function getRotation(d) {
     return 'r0';
 }
 
+var teeRotation = {
+    'East'  : {
+        r : 'r90'
+    },
+    'South' : {
+        r : 'r180'
+    },
+    'West'  : {
+        r : 'r270'
+    },
+    'North' : {
+        r : 'r0'
+    }
+};
+
 
 var cardinal = {
     'r0'    : {
@@ -187,22 +202,6 @@ function close(point, target) {
     return (lt <= point && point <= gt);
 }
 
-var overlap = {
-    // true but unnecessary if iterating via .each 
-    // and the overlaps are omitted from the objlit
-    'East' : function (newCard) {
-        return (newCard == 'West');
-    },
-    'South': function (newCard) {
-        return (newCard == 'North');
-    },
-    'West': function (newCard) {
-        return (newCard == 'East');
-    },
-    'North': function (newCard) {
-        return (newCard == 'South');
-    }
-};
 
 function matchTarget(card, pDiffs, target) {
     // should/could handle pip matching here, too?
@@ -213,9 +212,8 @@ function matchTarget(card, pDiffs, target) {
     return 'None';
 }
 
-
-
-function newNear(tip, rld, d) {
+function nearTip(tip, rld, d) {
+    // return true if piece is placed
     var pDiffs = getOffsets(d, tip),
         dRot = getRotation(d),
         tRot = getRotation(tip),
@@ -228,28 +226,45 @@ function newNear(tip, rld, d) {
         if (dDouble || (rld == 'doubleTip')) {
             // give up.  Any double means they should be
             // orthoganal, not aligned
-            return 'None';
+            return false;
         }
         newCard = matchTarget(card, pDiffs, card);
     // else know they are orthoganal, not aligned
     } else if (rld == 'doubleTip') {
             newCard = matchTarget(card, pDiffs, 'unTee');
-    } else if (isDouble(d)) {
+    } else if (dDouble) {
             newCard = matchTarget(card, pDiffs, 'tee');
     } else {
         $.each(targetSpots[card], function(key) {
             if (key == card || key == 'tee' || key == 'unTee') {
-                // skip
+                // skip, continue inner .each
                 return true;
             } else {
                 newCard = matchTarget(card, pDiffs, key);
+                // is this scoped to the inner .each?  will it
+                // set the newCard in the scope of nearTip?
+                // if not, need an alternative method here...
             }
             return (newCard == 'None');
-            // return true == continue looping
+            // return true == continue looping inner .each
         });
     }
     console.log("newCard is ", newCard);
     // after match, do connection?  as with old near.
+    if (newCard != 'None') {
+        removeTip(tip, card);
+        if (newCard == 'tee') {
+            // doubles are special
+            teeDouble(d, card);
+        } else if (newCard == 'unTee') {
+            // as are unTees, after a double
+            addTip(d, card);
+        } else {
+            addTip(d, newCard);
+        }
+        return true;
+    }
+    return false;
 }
 
 var horizontal = {
@@ -259,43 +274,6 @@ var horizontal = {
     'r270'  : false
 };
 
-function horizontalTip(pdiff, dRot, card) {
-    // Is the piece close enough to an East or West tip to connect?
-    if (horizontal[dRot]) {
-        // is it in the same row?
-        if (Math.abs(pdiff.y) < 10) {
-            return card;
-        }
-    } else { // vertical
-        if (Math.abs(pdiff.y) < 10) {
-            // adding a SouthTip
-            return 'South';
-        } else if ((pdiff.y > 9) && (pdiff.y < 40)) {
-            // adding a NorthTip
-            return 'North';
-        }
-    }
-    return 'None';
-}
-
-function verticalTip(pdiff, dRot, card) {
-    // Is the piece close enough to a North or South tip to connect?
-    if (!horizontal[dRot]) {
-        // is it in the same col?
-        if (Math.abs(pdiff.x) < 10) {
-            return card;
-        }
-    } else { // horizontal
-        if (Math.abs(pdiff.x) < 10) {
-            // adding an EastTip
-            return 'East';
-        } else if ((pdiff.x > 9) && (pdiff.x < 40)) {
-            // adding a WestTip
-            return 'West';
-        }
-    }
-    return 'None';
-}
 
 function teeDouble(d, card) {
     // since this is a double, play it as a tee
@@ -318,94 +296,6 @@ function isDouble(d) {
         r = parseInt(d.attr('rPips'), 10);
     return (l==r);
 }
-
-var teeRotation = {
-    'East'  : {
-        // add x, y and then rotate to vertical
-        r : 'r90'
-    },
-    'South' : {
-        r : 'r180'
-    },
-    'West'  : {
-        r : 'r270'
-    },
-    'North' : {
-        r : 'r0'
-    }
-};
-
-// this pdiff stuff is too loosey goosey
-// for any cardinal direction, there are exactly
-// three possible positions for an orthoganal piece,
-// with the center one being for doubles only, and
-// one and only one possible position for an aligned
-// piece.  So the nearTip question is just whether 
-// or not the position of d is close enough to one of
-// possible targets
-
-
-
-
-function nearTip(tip, rld, d) {
-    var pdiff = getOffsets(tip, d),
-        dRot = getRotation(d),
-        tRot = getRotation(tip);
-
-
-    var qual1 = {
-        'East'  : function(tip, d) {
-            // if d is east of tip, x is negative
-            // and -80 < x < 0 is not too far east 
-            if ((pdiff.x <= 0) && (pdiff.x > -82)) {
-                // rest of this is equiv to West, aside from
-                // the return of 'East' instead of 'West'
-                return horizontalTip(pdiff, dRot, 'East');
-            }
-            return 'None';
-        },
-        'South' : function(tip, d) {
-            // if d is south of tip, y is negative
-            // and -82 < y < 0 is not too far south 
-            if ((pdiff.y <= 0) && (pdiff.y > -82)) {
-                // rest is equiv to North
-                return verticalTip(pdiff, dRot, 'South');
-            }
-            return 'None';
-        },
-        'West'  : function(tip, d) {
-            // if d is west of tip, x is positive
-            // and 80 > x > 0 is not too far west 
-            if ((pdiff.x >= 0) && (pdiff.x < 82)) {
-                return horizontalTip(pdiff, dRot, 'West');
-            }
-            return 'None';
-        },
-        'North' : function(tip, d) {
-            // if d is north of tip, y is positive
-            // and 82 > y > 0 is not too far north 
-            if ((pdiff.y >= 0) && (pdiff.y < 82)) {
-                return verticalTip(pdiff, dRot, 'North');
-            }
-            return 'None';
-        },
-    };
-    // get the cardinal direction of the tip
-    var card = cardinal[tRot][rld];
-    var newCard = qual1[card](tip, d);
-    if (newCard != 'None') {
-        removeTip(tip, card);
-        if (isDouble(d)) {
-            // ignore newCard, doubles are special
-            teeDouble(d, card);
-        } else {
-            addTip(d, newCard);
-        }
-        return true;
-    }
-    return false;
-}
-
 
 
 var whichTips = {
