@@ -252,20 +252,50 @@ function nearTip(tip, rld, d) {
     console.log("newCard is ", newCard);
     // after match, do connection?  as with old near.
     if (newCard != 'None') {
-        removeTip(tip, card);
         if (newCard == 'tee') {
             // doubles are special
+            tPips = getPips(tip, card, 0);
+            dPips = getPips(d, newCard, 1);
+            console.log("pips:", tPips, dPips);
+            if (tPips != dPips) {
+                return false;
+            }
             teeDouble(d, card);
         } else if (newCard == 'unTee') {
             // as are unTees, after a double
+            tPips = getPips(tip, 'tee', 0);
+            dPips = getPips(d, card, 1);
+            console.log("pips:", tPips, dPips);
+            if (tPips != dPips) {
+                return false;
+            }
             addTip(d, card);
         } else {
+            tPips = getPips(tip, card, 0);
+            dPips = getPips(d, newCard, 1);
+            console.log("pips:", tPips, dPips);
+            if (tPips != dPips) {
+                return false;
+            }
             addTip(d, newCard);
         }
+        removeTip(tip, card);
         return true;
     }
     return false;
 }
+
+function getPips(domino, card, i) {
+    if (card == 'tee') {
+        // domino is double, either end works
+        return pips(domino, 'lPips');
+    } else if (whichTips[getRotation(domino)][card][i] == 'leftTip') {
+        return pips(domino, 'lPips');
+    } else {
+        return pips(domino, 'rPips');
+    }
+}
+
 
 var horizontal = {
     'r0'    : true,
@@ -342,15 +372,25 @@ function addTip(d, newCard) {
     d.addClass('anyTip');
 }
 
+function pips(domino, lrPips) {
+    var $domino = $(domino);
+    p = parseInt($domino.attr(lrPips), 10);
+    console.log("in pips", lrPips, p);
+    return p;
+}
+
 function sumTips() {
     var score = 0;
     $('.anyTip').each(function(index, domino){
         $domino = $(domino);
         if ($domino.hasClass('leftTip')) {
-            score += parseInt($domino.attr('lPips'), 10);
+            score += pips(domino, 'lPips');
         }
         if ($domino.hasClass('rightTip')) {
-            score += parseInt($domino.attr('rPips'), 10);
+            score += pips(domino, 'rPips');
+        }
+        if ($domino.hasClass('doubleTip')) {
+            score += 2*pips(domino, 'lPips');
         }
     });
     return score;
