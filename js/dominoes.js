@@ -1,24 +1,7 @@
 /*
-Testing too many changes stepwise:
- - look at borders while rotating: as expected.
- - add .bordertest before and after rotations.  As expected.
- - make boneyard with pip values. done.
- - use console to verify pip values. 
- - set #23 in pickDominoes and call sumTips on it. done
+possible options:
+ - remove draggable when attached
 
- - set #36 next to #23
-   - update tips: #23 leftTip, #36 rightTip, #36.addClass('anyTip')
-   - call sumTips
- - set #46 next to #36, rotated, and do same tests
-
- - connect to string and remove draggable?
- - don't worry about all the grids, just the ones that are active 
- because of a Tip.  If a piece is dropped but not connected, highlight
- it differently (blue).  
- - on drop, snap to (virtual) grid
-   - then check to see if location validates as an extension of the play (update)
-   - or just a random piece dropped in space (highlight temporary outcast?)
- - while dragging, message new lots only
 */
 
 
@@ -59,23 +42,26 @@ function setUpBoneyard() {
         ['36', '3', '6'],   ['26', '2', '6'],   ['16', '1', '6'],   ['45', '4', '5'],
         ['35', '3', '5'],   ['25', '2', '5'],   ['15', '1', '5'],   ['34', '3', '4'],
         ['24', '2', '4'],   ['14', '1', '4'],   ['23', '2', '3'],   ['13', '1', '3'],
-        ['12', '1', '2'],   ['back', '0', '0'] ];
+        ['12', '1', '2'], ];
 
+    var backimg = '<img src="https://dl.dropboxusercontent.com/u/78878172/domis/back.png"/>';
     for (i=0; i < dominoes.length; i++) {
         // 
         var d = dominoes[i][0];
 
         var dburl = "https://dl.dropboxusercontent.com/u/78878172/domis/";
-        var pic = "<img src='" + dburl + d + ".png'/>";
-        // newd = "<div id=" + d + "/>" + pic + "</div>";
+        var pic = dburl + d + ".png";
         var newd = "<div id=" + d + "/>" + "</div>";
         $('div#boneyard').append($(newd).addClass('domino'));
         var newDomi = $('div#'+d);
-        // $('div#'+d).append($(pic));
-        $(newDomi).append($(pic));
+        $(newDomi).append($(backimg).attr('front', pic));
         $(newDomi).attr('lPips', dominoes[i][1]);
         $(newDomi).attr('rPips', dominoes[i][2]);
-        $(newDomi).css('top', i.toString());
+        var pos = {
+            top: ((i%3)*9).toString(),
+            left: ((i%3)*9).toString()
+        };
+        $(newDomi).css(pos);
     }
 }
 
@@ -102,7 +88,7 @@ function pickDominoes() {
 function getOffsets(d1, d2) {
     var pos1 = d1.position();
     var pos2 = d2.position();
-    console.log(pos1, pos2);
+    // console.log(pos1, pos2);
     return {
         'x' : parseInt(pos1.left, 10) - parseInt(pos2.left, 10),
         'y' : parseInt(pos1.top, 10) - parseInt(pos2.top, 10)
@@ -249,7 +235,7 @@ function nearTip(tip, rld, d) {
             // return true == continue looping inner .each
         });
     }
-    console.log("newCard is ", newCard);
+    // console.log("newCard is ", newCard);
     // after match, do connection?  as with old near.
     if (newCard != 'None') {
         if (newCard == 'tee') {
@@ -462,6 +448,12 @@ $(document).ready(function() {
         });
         $domino.mousedown(function() {
             // console.log("mouse down", $(this).position());
+        });
+        $domino.one('mouseup', function(){
+            // change this to flip the domino when it is picked 
+            // by a player
+            var myimg = $(this).children();
+            myimg.attr('src', myimg.attr('front'));
         });
         $domino.mouseup(function() {
             // console.log("mouse up", $(this).position());
