@@ -1,14 +1,29 @@
 /*
 possible options:
- - remove draggable when attached
+ - remove draggable when inner attached
+ - reset draggable when undoing moves
 
+TBD:
+randomize boneyard
+accept the score by clicking on it?
+handle special case of first domino is a double:  
+    it is bidirectional, and should stay blue until
+    played on both sides, not just one side.
+use message types for different operations? 
+    simple move or rotate
+    attach
+    remove tips 
+    score
 */
 
 
 var MESSAGE_PROPERTIES = {
-    "pieceId" : "PIECEID",
-    "newTop" : "NEWTOP",
-    "newLeft" : "NEWLEFT"
+    "pieceId"   : "PIECEID",
+    "newTop"    : "NEWTOP",
+    "newLeft"   : "NEWLEFT",
+    "tips"      : "TIPS",
+    "rotation"  : "ROTATION",
+    "score"     : "SCORE"
 };
 
 
@@ -17,10 +32,9 @@ var redplayer = false;
 var channel = (Math.round (Math.random()*100000)).toString();
 var destination = "/topic/dominoes";
 
-var playPoints, scorePoints;
+var playPoints, scorePoints, scoreForPlayer;
 
 var anyRotation = 'r90 r270 r180';
-
 
 function setUpMessaging() {
     // construct the WebSocket location
@@ -65,25 +79,17 @@ function setUpBoneyard() {
     }
 }
 
-function pickDominoes() {
-    // seven to each player (just 2 players for now)
-    var back;
-    // while testing: just move back out of the way
-    $back = $('#back');
-    $back.css('top', (8*18).toString());
-    $back.css('left', (4*18).toString());
-    console.log($back.position());
-    // while testing: pick an arbitrary start
-    var d23;
-    $d23 = $('#23');
-    $d23.css('top', (4*18).toString());
-    $d23.css('left', (4*18).toString());
-    // mark the playable tips
-    $d23.addClass('leftTip');
-    $d23.addClass('rightTip');
-    $d23.addClass('anyTip');
-    console.log('sumTips before of #23 only:', sumTips());
+function setFirstDomino(d) {
+    if (isDouble(d)) {
+        d.addClass('doubleTip');
+    } else {
+        d.addClass('leftTip');
+        d.addClass('rightTip');
+    }
+    d.addClass('anyTip');
+    sumTips();
 }
+
 
 function getOffsets(d1, d2) {
     var pos1 = d1.position();
@@ -242,7 +248,7 @@ function nearTip(tip, rld, d) {
             // doubles are special
             tPips = getPips(tip, card, 0);
             dPips = getPips(d, newCard, 1);
-            console.log("pips:", tPips, dPips);
+            // console.log("pips:", tPips, dPips);
             if (tPips != dPips) {
                 return false;
             }
@@ -251,7 +257,7 @@ function nearTip(tip, rld, d) {
             // as are unTees, after a double
             tPips = getPips(tip, 'tee', 0);
             dPips = getPips(d, card, 1);
-            console.log("pips:", tPips, dPips);
+            // console.log("pips:", tPips, dPips);
             if (tPips != dPips) {
                 return false;
             }
@@ -259,7 +265,7 @@ function nearTip(tip, rld, d) {
         } else {
             tPips = getPips(tip, card, 0);
             dPips = getPips(d, newCard, 1);
-            console.log("pips:", tPips, dPips);
+            // console.log("pips:", tPips, dPips);
             if (tPips != dPips) {
                 return false;
             }
@@ -361,12 +367,12 @@ function addTip(d, newCard) {
 function pips(domino, lrPips) {
     var $domino = $(domino);
     p = parseInt($domino.attr(lrPips), 10);
-    console.log("in pips", lrPips, p);
+    // console.log("in pips", lrPips, p);
     return p;
 }
 
 function sumTips() {
-    var score = 0;
+    var score = 0, old = 0;
     $('.anyTip').each(function(index, domino){
         $domino = $(domino);
         if ($domino.hasClass('leftTip')) {
@@ -379,7 +385,14 @@ function sumTips() {
             score += 2*pips(domino, 'lPips');
         }
     });
-    return score;
+    
+    if ((score%5) === 0) {
+        old = parseInt(scoreForPlayer.text(), 10);
+        score = (score/5);
+        console.log("old", old, " +", score);
+        scoreForPlayer.text((old+score).toString());
+    }
+
 }
 
 var nextRotation = {
@@ -429,7 +442,14 @@ function rotateMe(me) {
 
 $(document).ready(function() {
     setUpBoneyard();
-    pickDominoes();
+    scoreForPlayer = $('.scoreA');
+    $('.startBox').droppable({
+        drop: function (event, ui) {
+            console.log(ui.draggable, 'dropped on me', $(this));
+            setFirstDomino(ui.draggable);
+            $(this).hide();
+        }
+    });
     $('.domino').each(function(index, domino){
         $domino = $(domino);
         // console.log(index, $domino);
@@ -446,12 +466,14 @@ $(document).ready(function() {
             // console.log("adjusted pos is: ", pos);
             // $(this).css(pos);
         });
-        $domino.mousedown(function() {
-            // console.log("mouse down", $(this).position());
-        });
+        // $domino.mousedown(function() {
+        // });
         $domino.one('mouseup', function(){
             // change this to flip the domino when it is picked 
-            // by a player
+            // by a player; the message to the other player will
+            // move the domino but label it as the opponent's, not
+            // flipped.  Only flip for both players once the piece
+            // is played.
             var myimg = $(this).children();
             myimg.attr('src', myimg.attr('front'));
         });
@@ -468,6 +490,9 @@ $(document).ready(function() {
                 if ($tip.hasClass('doubleTip')) {
                     placed = nearTip($tip, 'doubleTip', $d);
                     // mutually exclusive with right and left
+                    if (placed) {
+                        sumTips();
+                    }
                     return !placed;
                 }
                 if ($tip.hasClass('rightTip')) {
@@ -477,6 +502,9 @@ $(document).ready(function() {
                     // the first piece played will have both r & l tips
                     // likewise a double after both long edges are played
                     placed = nearTip($tip, 'leftTip', $d) || placed;
+                }
+                if (placed) {
+                    sumTips();
                 }
                 // if placed, return false to stop .each() loop
                 return !placed;

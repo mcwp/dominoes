@@ -41,22 +41,11 @@ p {
     position: relative;
 }
 
-.playerA, .playerB {
-    position: relative;
-    margin: 10px;
-    width: 80%;
-    color: white;
-    border-radius: 10px;
-    /*display: none;*/
+.startBox {
+    border-radius: 20px;
+    border: 2px dotted green ;
+    top: 162px;
+    left: 234px;
+    width: 36px;
+    height: 36px;
 }
-
-.playerA {
-    box-shadow: 0 0 2px 4px #06F;
-    border-color: #008800;
-}
-
-.playerB {
-    box-shadow: 0 0 2px 4px #6F0;
-    border-color: #000088;
-}
-
