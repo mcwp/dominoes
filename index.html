@@ -2,7 +2,7 @@
 	<head>
 		<title>Dominoes for Sara</title>
 		<link rel="stylesheet" href="css/style.css"/>
-        <!--
+	 	<!--
 		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
         -->
@@ -13,9 +13,13 @@
 		<script src='js/dominoes.js'></script>
     </head>
 	<body style='background-color:black;'>
-		<!-- instead of this blank div, use the back domino to
-		represent the boneyard of dominoes?
-		 -->
-        <div id="boneyard"></div>
+		<div id="players" class="outermost">
+			<div class='playerA'>Sara's pieces</div>
+			<div class='playerB'>Marla's pieces</div>	
+			<p>Starting small. 
+				<span class='scoreA'>Sara's score:</span> <span class='scoreB'>Marla's score:</span>
+			</p>
+        	<div id="boneyard" class="boneStyle"></div>
+		</div>
 	</body>
-</html>        
+</html>

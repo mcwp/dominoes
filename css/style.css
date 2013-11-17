@@ -32,3 +32,31 @@ div {
     box-shadow: 0 0 2px 4px #0A0;
 }
 
+p {
+    color: white;
+    font-size: large;
+}
+
+.outermost {
+    position: relative;
+}
+
+.playerA, .playerB {
+    position: relative;
+    margin: 10px;
+    width: 80%;
+    color: white;
+    border-radius: 10px;
+    /*display: none;*/
+}
+
+.playerA {
+    box-shadow: 0 0 2px 4px #06F;
+    border-color: #008800;
+}
+
+.playerB {
+    box-shadow: 0 0 2px 4px #6F0;
+    border-color: #000088;
+}
+
