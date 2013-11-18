@@ -14,22 +14,27 @@ use message types for different operations?
     attach
     remove tips 
     score
+
+kaazing mods:
+ - pass in userid for each user, based on use clicking player A or player B
+ - 
 */
 
 
 var MESSAGE_PROPERTIES = {
-    "pieceId"   : "PIECEID",
+    "dominoId"  : "DOMINOID",
     "newTop"    : "NEWTOP",
     "newLeft"   : "NEWLEFT",
-    "tips"      : "TIPS",
-    "rotation"  : "ROTATION",
-    "score"     : "SCORE"
+    "setClass"  : "SETCLASS",
+    "scoreA"    : "SCOREA",
+    "scoreB"    : "SCOREB"
 };
 
 
 var readyToPlay = false;
 var redplayer = false;
-var channel = (Math.round (Math.random()*100000)).toString();
+// var channel = (Math.round (Math.random()*100000)).toString();
+var channel = 905120;
 var destination = "/topic/dominoes";
 
 var playPoints, scorePoints, scoreForPlayer;
@@ -38,6 +43,47 @@ var anyRotation = 'r90 r270 r180';
 
 function setUpMessaging() {
     // construct the WebSocket location
+    var locationURI = new URI(document.URL || location.href);
+
+    locationURI.scheme = locationURI.scheme.replace("http", "ws");
+    locationURI.path = "/jms";
+    delete locationURI.query;
+    delete locationURI.fragment;
+    // default the location
+    var url = locationURI.toString();
+    destination = destination + channel;
+    ccps.startConnection(url, destination, init, MESSAGE_PROPERTIES, makeMove);}
+
+function init() {
+    var d1 = $('#d1');
+    d1.css('top', '36px');
+}
+
+function makeMove(messageData) {
+    // flip my view of this domino
+    // place it according to message
+    console.log(messageData);
+}
+
+function messageDominoPicked(d) {
+    console.log('add label to back of domino ', d);
+}
+
+function messageDominoRotated(d) {
+    console.log('rotated domino ', d);
+}
+
+function messageDominoPlaced(d) {
+    console.log('placed or untipped domino ', d);
+    var newMessageData = {};
+    newMessageData.dominoId = d[0].id;
+    newMessageData.newTop = d.css('top');
+    newMessageData.newLeft = d.css('left');
+    newMessageData.setClass = d.attr('class');
+    // console.log("sending ...");
+    // console.log($piece);
+    // console.log(newMessageData);
+    ccps.sendMessagePlay(newMessageData);
 }
 
 function setUpBoneyard() {
@@ -87,7 +133,9 @@ function setFirstDomino(d) {
         d.addClass('rightTip');
     }
     d.addClass('anyTip');
+    d.addClass('veryFirst');
     sumTips();
+    messageDominoPlaced(d);
 }
 
 
@@ -134,22 +182,26 @@ var cardinal = {
     'r0'    : {
         'rightTip'  : 'East',
         'leftTip'   : 'West',
-        'doubleTip' : 'North'
+        'doubleTip' : 'North',
+        'veryFirst' : 'South'
     },
     'r90'   : {
         'rightTip'  : 'South',
         'leftTip'   : 'North',
-        'doubleTip' : 'East'
+        'doubleTip' : 'East',
+        'veryFirst' : 'West'
     },
     'r180'    : {
         'rightTip'  : 'West',
         'leftTip'   : 'East',
-        'doubleTip' : 'South'
+        'doubleTip' : 'South',
+        'veryFirst' : 'North'
     },
     'r270'   : {
         'rightTip'  : 'North',
         'leftTip'   : 'South',
-        'doubleTip' : 'West'
+        'doubleTip' : 'West',
+        'veryFirst' : 'East'
     }};
 
 
@@ -209,6 +261,8 @@ function nearTip(tip, rld, d) {
     var pDiffs = getOffsets(d, tip),
         dRot = getRotation(d),
         tRot = getRotation(tip),
+        opposite = 'None',
+        veryFirst = tip.hasClass('veryFirst'),
         card = cardinal[tRot][rld];
 
     newCard = 'None';
@@ -224,6 +278,10 @@ function nearTip(tip, rld, d) {
     // else know they are orthoganal, not aligned
     } else if (rld == 'doubleTip') {
             newCard = matchTarget(card, pDiffs, 'unTee');
+            if (veryFirst && (newCard == 'None')) {
+                opposite = cardinal[tRot]['veryFirst'];
+                newCard = matchTarget(opposite, pDiffs, 'unTee');
+            }
     } else if (dDouble) {
             newCard = matchTarget(card, pDiffs, 'tee');
     } else {
@@ -257,11 +315,33 @@ function nearTip(tip, rld, d) {
             // as are unTees, after a double
             tPips = getPips(tip, 'tee', 0);
             dPips = getPips(d, card, 1);
+            // two special cases: veryFirst(1) and opposite(1/0)
             // console.log("pips:", tPips, dPips);
             if (tPips != dPips) {
-                return false;
+                if (opposite != 'None') {
+                    dPips = getPips(d, opposite, 1);
+                    if (tPips != dPips) {
+                        return false;
+                    } else {
+                        card = opposite;
+                        // no need to rotate
+                    }
+                } else {
+                    return false;
+                }
+            } else if (veryFirst) {
+                // not anymore, spin around
+                teeDouble(tip, cardinal[tRot]['veryFirst']);
+                tip.removeClass('veryFirst');
+                // avoid removing the doubleTip too early
+                return true;
             }
             addTip(d, card);
+            if (card == opposite) {
+                tip.removeClass('veryFirst');
+                // avoid removing the doubleTip too early
+                return true;
+            }
         } else {
             tPips = getPips(tip, card, 0);
             dPips = getPips(d, newCard, 1);
@@ -347,6 +427,8 @@ function removeTip(tip, card) {
         // after extending past the tee, the tips are playable, too
         tip.addClass('leftTip');
         tip.addClass('rightTip');
+        // but this domino will not count in anymore scoring
+        tip.addClass('noScore');
     } else {
         var wt = whichTips[rot][card];
         tip.removeClass(wt[0]);
@@ -375,6 +457,10 @@ function sumTips() {
     var score = 0, old = 0;
     $('.anyTip').each(function(index, domino){
         $domino = $(domino);
+        if ($domino.hasClass("noScore")) {
+            // skip, continue .each loop
+            return true;
+        }
         if ($domino.hasClass('leftTip')) {
             score += pips(domino, 'lPips');
         }
@@ -392,7 +478,6 @@ function sumTips() {
         console.log("old", old, " +", score);
         scoreForPlayer.text((old+score).toString());
     }
-
 }
 
 var nextRotation = {
@@ -437,10 +522,12 @@ function rotateMe(me) {
         $me.addClass(myNext);
     }
     console.log("after rotation, position is ", myNext, $me.position());
+    messageDominoRotated($me);
 }
 
 
 $(document).ready(function() {
+    setUpMessaging();
     setUpBoneyard();
     scoreForPlayer = $('.scoreA');
     $('.startBox').droppable({
@@ -476,6 +563,7 @@ $(document).ready(function() {
             // is played.
             var myimg = $(this).children();
             myimg.attr('src', myimg.attr('front'));
+            messageDominoPicked($(this));
         });
         $domino.mouseup(function() {
             // console.log("mouse up", $(this).position());
@@ -483,8 +571,8 @@ $(document).ready(function() {
             $('.anyTip').each(function(index, tip){
                 $tip = $(tip);
                 if ($tip.attr('id') == $d.attr('id')) {
-                    // don't match with myself
-                    return;
+                    // don't match with myself, continue .each loop
+                    return true;
                 }
                 var placed = false;
                 if ($tip.hasClass('doubleTip')) {
@@ -492,6 +580,7 @@ $(document).ready(function() {
                     // mutually exclusive with right and left
                     if (placed) {
                         sumTips();
+                        messageDominoPlaced($d);
                     }
                     return !placed;
                 }
@@ -505,6 +594,7 @@ $(document).ready(function() {
                 }
                 if (placed) {
                     sumTips();
+                    messageDominoPlaced($d);
                 }
                 // if placed, return false to stop .each() loop
                 return !placed;
