@@ -52,29 +52,28 @@ function setUpMessaging() {
     // default the location
     var url = locationURI.toString();
     destination = destination + channel;
-    ccps.startConnection(url, destination, init, MESSAGE_PROPERTIES, makeMove);}
+    ccps.startConnection(url, destination, init, MESSAGE_PROPERTIES, acceptMove);}
 
 function init() {
     var d1 = $('#d1');
     d1.css('top', '36px');
 }
 
-function makeMove(messageData) {
+function acceptMove(messageData) {
+    var d = $(document.getElementById(messageData.dominoId));
+    var top = messageData.newTop;
+    var left = messageData.newLeft;
+    d.css('top', top);
+    d.css('left', left);
+    d.attr('class', messageData.setClass);
     // flip my view of this domino
     // place it according to message
     console.log(messageData);
 }
 
-function messageDominoPicked(d) {
-    console.log('add label to back of domino ', d);
-}
 
-function messageDominoRotated(d) {
-    console.log('rotated domino ', d);
-}
-
-function messageDominoPlaced(d) {
-    console.log('placed or untipped domino ', d);
+function messageDominoData(d) {
+    console.log('placed or untipped domino ');
     var newMessageData = {};
     newMessageData.dominoId = d[0].id;
     newMessageData.newTop = d.css('top');
@@ -88,13 +87,6 @@ function messageDominoPlaced(d) {
 
 function setUpBoneyard() {
     // create the dominoes
-    var dominoes1 = ['db', 'd6', 'd5', 'd4', 'd3', 'd2', 'd1',
-                          'b6', 'b5', 'b4', 'b3', 'b2', 'b1',
-                                '56', '46', '36', '26', '16',
-                                      '45', '35', '25', '15',
-                                            '34', '24', '14',
-                                                  '23', '13',
-                                                        '12', 'back'];
     var dominoes = [['db', '0', '0'],   ['d6', '6', '6'],   ['d5', '5', '5'],
         ['d4', '4', '4'],   ['d3', '3', '3'],   ['d2', '2', '2'],   ['d1', '1', '1'],
         ['b6', '0', '6'],   ['b5', '0', '5'],   ['b4', '0', '4'],   ['b3', '0', '3'],
@@ -135,7 +127,7 @@ function setFirstDomino(d) {
     d.addClass('anyTip');
     d.addClass('veryFirst');
     sumTips();
-    messageDominoPlaced(d);
+    messageDominoData(d);
 }
 
 
@@ -522,7 +514,7 @@ function rotateMe(me) {
         $me.addClass(myNext);
     }
     console.log("after rotation, position is ", myNext, $me.position());
-    messageDominoRotated($me);
+    messageDominoData($me);
 }
 
 
@@ -563,11 +555,13 @@ $(document).ready(function() {
             // is played.
             var myimg = $(this).children();
             myimg.attr('src', myimg.attr('front'));
-            messageDominoPicked($(this));
+            console.log('one mouseup for ', $(this).id);
+            messageDominoData($(this));
         });
         $domino.mouseup(function() {
             // console.log("mouse up", $(this).position());
             var $d = $(this);
+            console.log('any mouseup for ', $(this).id);
             $('.anyTip').each(function(index, tip){
                 $tip = $(tip);
                 if ($tip.attr('id') == $d.attr('id')) {
@@ -580,7 +574,6 @@ $(document).ready(function() {
                     // mutually exclusive with right and left
                     if (placed) {
                         sumTips();
-                        messageDominoPlaced($d);
                     }
                     return !placed;
                 }
@@ -594,11 +587,11 @@ $(document).ready(function() {
                 }
                 if (placed) {
                     sumTips();
-                    messageDominoPlaced($d);
                 }
                 // if placed, return false to stop .each() loop
                 return !placed;
             });
+            messageDominoData($d);
         });
     });
 });
