@@ -34,17 +34,36 @@ var MESSAGE_PROPERTIES = {
 var readyToPlay = false;
 var redplayer = false;
 // var channel = (Math.round (Math.random()*100000)).toString();
-var channel = 905120;
+// var channel = 905120;
 var destination = "/topic/dominoes";
 
 var playPoints, scorePoints, scoreForPlayer;
 
 var anyRotation = 'r90 r270 r180';
 
+function setUpPlayers(url) {
+    var qs = url.split('?')[1],
+        params = {};
+
+    if (qs) {
+        var pairs = qs.split('&');
+        pairs.forEach(function(pair) {
+            pair = pair.split('=');
+            params[pair[0]] = decodeURIComponent(pair[1] || '');
+        });
+    }
+    playerA = params.a || "Sara";
+    playerB = params.b || "Marla";
+    channel = params.c || 905120;
+    $('.playerA').text(playerA);
+    $('.playerB').text(playerB);
+}
+
 function setUpMessaging() {
     // construct the WebSocket location
     var locationURI = new URI(document.URL || location.href);
 
+    setUpPlayers(document.URL || location.href);
     locationURI.scheme = locationURI.scheme.replace("http", "ws");
     locationURI.path = "/jms";
     delete locationURI.query;
@@ -56,7 +75,8 @@ function setUpMessaging() {
 
 function init() {
     var d1 = $('#d1');
-    d1.css('top', '36px');
+    d1.css('top', '54px');
+    d1.append($('<div class="layer"><p>insert tag here</p></div>'));
 }
 
 function acceptMove(messageData) {
@@ -464,9 +484,10 @@ function sumTips() {
         }
     });
     
-    if ((score%5) === 0) {
+    // if ((score%5) === 0) {
+    if ((score%1) === 0) {
         old = parseInt(scoreForPlayer.text(), 10);
-        score = (score/5);
+        // score = (score/5);
         console.log("old", old, " +", score);
         scoreForPlayer.text((old+score).toString());
     }
@@ -521,7 +542,11 @@ function rotateMe(me) {
 $(document).ready(function() {
     setUpMessaging();
     setUpBoneyard();
+    // default scoring
     scoreForPlayer = $('.scoreA');
+    $('label').click(function(){
+        scoreForPlayer = $($(this).children()[2]);
+    });
     $('.startBox').droppable({
         drop: function (event, ui) {
             console.log(ui.draggable, 'dropped on me', $(this));

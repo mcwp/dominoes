@@ -15,15 +15,29 @@
 		<script src='js/dominoes.js'></script>
     </head>
 	<body style='background-color:black;'>
-		<div id="players" class="outermost">
-		<div class='startBox'>
-		</div>
-			<p> Sara's score:
-				<span class='scoreA'>0</span>
-				Marla's score:
-				<span class='scoreB'>0</span>
-			</p>
+	<div id="players" class="outermost">
+			<div class='scores'>
+				<div>
+					<input type="radio" id="radioA" name="radio" checked/>
+					<label for="radioA">
+						<span class="radbut"></span>
+						<span class="playerA">Sara</span>'s score:
+						<span class='scoreA'>0</span></br>
+					</label>
+				</div>
+
+				<div>
+					<input type="radio" id="radioB" name="radio" />
+					<label for="radioB">
+						<span class="radbut"></span>
+						<span class="playerB">Marla</span>'s score:
+						<span class='scoreB'>0</span>
+					</label>
+				</div>
+			</div>
         	<div id="boneyard" class="boneStyle"></div>
+			<div class='startBox'>
+			</div>
 		</div>
 	</body>
 </html>

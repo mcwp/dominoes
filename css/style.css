@@ -1,4 +1,4 @@
-div {
+.domino {
     position: absolute;
 }
 .r90 {
@@ -32,16 +32,34 @@ div {
     box-shadow: 0 0 2px 4px #0A0;
 }
 
-p {
-    color: white;
+.scores {
+    color: lightgreen;
     font-size: large;
+    width: 10em;
+    /*margin-bottom: 10px;*/
+    border-radius: 10px;
+    box-shadow: 0 0 2px 4px #0A0;
+}
+
+.layer {
+    /*background-color: blue;*/
+    position: absolute;
+    /*opacity: 0.4;*/
+    top: 0;
+    left: 0;
 }
 
 .outermost {
     position: relative;
 }
 
+.boneStyle {
+    position: relative;
+    margin: 20px;
+}
+
 .startBox {
+    position: absolute;
     border-radius: 20px;
     border: 2px dotted green ;
     top: 162px;
@@ -49,3 +67,30 @@ p {
     width: 36px;
     height: 36px;
 }
+
+
+input[type="radio"] {
+    display:none;
+}
+
+
+input[type="radio"] + label .radbut {
+    display:inline-block;
+    width:15px;
+    height:15px;
+    margin: -2px 4px 1px 4px;
+    vertical-align:middle;
+    cursor:pointer;
+    -moz-border-radius:  50%;
+    border-radius:  50%;
+    border-style: solid;
+    border-color: lightgreen;
+    color: lightgreen;
+}
+
+
+input[type="radio"]:checked + label .radbut {
+    /* This makes the styled button function. */
+     background-color:#0A0;
+}
+
