@@ -466,7 +466,7 @@ function pips(domino, lrPips) {
 }
 
 function sumTips() {
-    var score = 0, old = 0;
+    var score = 0, old = 0, tips = 0;
     $('.anyTip').each(function(index, domino){
         $domino = $(domino);
         if ($domino.hasClass("noScore")) {
@@ -474,20 +474,20 @@ function sumTips() {
             return true;
         }
         if ($domino.hasClass('leftTip')) {
-            score += pips(domino, 'lPips');
+            tips += pips(domino, 'lPips');
         }
         if ($domino.hasClass('rightTip')) {
-            score += pips(domino, 'rPips');
+            tips += pips(domino, 'rPips');
         }
         if ($domino.hasClass('doubleTip')) {
-            score += 2*pips(domino, 'lPips');
+            tips += 2*pips(domino, 'lPips');
         }
     });
     
-    // if ((score%5) === 0) {
-    if ((score%1) === 0) {
+    $('.tipSum').text(tips.toString());
+    if ((tips%5) === 0) {
         old = parseInt(scoreForPlayer.text(), 10);
-        // score = (score/5);
+        score = (tips/5);
         console.log("old", old, " +", score);
         scoreForPlayer.text((old+score).toString());
     }
