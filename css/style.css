@@ -58,12 +58,13 @@
     box-shadow: 0 0 2px 4px #0A0;
 }
 
-.layer {
+.flip {
     /*background-color: blue;*/
-    position: absolute;
     /*opacity: 0.4;*/
-    top: 0;
-    left: 0;
+    position: absolute;
+    font-family: cursive;
+    top: -8px;
+    left: 8px;
 }
 
 .outermost {

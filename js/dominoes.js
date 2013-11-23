@@ -37,7 +37,7 @@ var redplayer = false;
 // var channel = 905120;
 var destination = "/topic/dominoes";
 
-var playPoints, scorePoints, scoreForPlayer;
+var playPoints, scorePoints, scoreForPlayer, scorePlayerName;
 
 var anyRotation = 'r90 r270 r180';
 
@@ -57,6 +57,9 @@ function setUpPlayers(url) {
     channel = params.c || 905120;
     $('.playerA').text(playerA);
     $('.playerB').text(playerB);
+    // initialize to playerA
+    scoreForPlayer = $('.scoreA');
+    scorePlayerName = playerA;
 }
 
 function setUpMessaging() {
@@ -76,7 +79,7 @@ function setUpMessaging() {
 function init() {
     var d1 = $('#d1');
     d1.css('top', '54px');
-    d1.append($('<div class="layer"><p>insert tag here</p></div>'));
+    d1.append($('<p class="flip">' + scorePlayerName + '</p>'));
 }
 
 function acceptMove(messageData) {
@@ -543,9 +546,9 @@ $(document).ready(function() {
     setUpMessaging();
     setUpBoneyard();
     // default scoring
-    scoreForPlayer = $('.scoreA');
     $('label').click(function(){
         scoreForPlayer = $($(this).children()[2]);
+        scorePlayerName = $($(this).children()[1]).text();
     });
     $('.startBox').droppable({
         drop: function (event, ui) {
