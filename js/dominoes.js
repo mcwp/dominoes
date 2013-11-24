@@ -10,10 +10,11 @@ handle special case of first domino is a double:
     it is bidirectional, and should stay blue until
     played on both sides, not just one side.
 use message types for different operations? 
-    simple move or rotate
-    attach
+    just move - no class changes
+    just rotate - no moving
+    attach and add tips
     remove tips 
-    score
+    update opponent's score
 
 kaazing mods:
  - pass in userid for each user, based on use clicking player A or player B
@@ -98,6 +99,7 @@ function acceptMove(messageData) {
         left = messageData.newLeft,
         playerName = messageData.playerName;
 
+    console.log("accepting move... ", messageData.dominoId);
     if (playerName !== "") {
         // only sent from the first mouseUp, which
         // flips the domino for the other player
@@ -111,8 +113,11 @@ function acceptMove(messageData) {
     }
     d.css('top', top);
     d.css('left', left);
-    d.removeClass();
-    d.attr('class', messageData.setClass);
+    if (messageData.setClass !== "") {
+        d.removeClass();
+        d.attr('class', messageData.setClass);
+        console.log("set to", d.attr('class'));
+    }
 
     // flip my view of this domino
     // place it according to message
@@ -127,6 +132,7 @@ function messageDominoData(d, playerName, msgTxt) {
     newMessageData.newTop = d.css('top');
     newMessageData.newLeft = d.css('left');
     newMessageData.setClass = d.attr('class');
+    console.log("sending message for ", d[0].id, " with class: ", newMessageData.setClass);
     newMessageData.playerName = playerName;
 
     // console.log("sending ...");
@@ -176,8 +182,8 @@ function setFirstDomino(d) {
     }
     d.addClass('anyTip');
     d.addClass('veryFirst');
-    messageDominoData(d, "", "set first domino");
     sumTips();
+    messageDominoData(d, "", "set first domino");
 }
 
 
@@ -383,7 +389,6 @@ function nearTip(tip, rld, d) {
             if (card == opposite) {
                 tip.removeClass('veryFirst');
                 messageDominoData(tip, "", "not first anymore");
-                messageDominoData(d, "", "d added on opposite");
                 // avoid removing the doubleTip too early
                 return true;
             }
@@ -396,7 +401,6 @@ function nearTip(tip, rld, d) {
             }
             addTip(d, newCard);
         }
-        messageDominoData(d, "", "ordinary new tip");
         removeTip(tip, card);
         messageDominoData(tip, "", "ordinary old tip");
         return true;
@@ -570,7 +574,6 @@ function rotateMe(me) {
         $me.addClass(myNext);
     }
     // console.log("after rotation, position is ", myNext, $me.position());
-    messageDominoData($me, "", "dizzy after rotation");
 }
 
 
@@ -593,12 +596,15 @@ $(document).ready(function() {
         $domino = $(domino);
         // console.log(index, $domino);
         $domino.draggable({
-            grid: [ 9, 9 ]
-            // drag: function() { send all or each nth position},        
+            grid: [ 9, 9 ],
+            drag: function() {
+                messageDominoData($(this), "", "drag");
+            },
         });
         $domino.dblclick(function(event) {
             console.log("double click");
             rotateMe(this);
+            messageDominoData($(this), "", "just rotated");
             // event.preventDefault();
             // console.log("after rotate, position is: ", $(this).position());
             // Read the position
@@ -633,6 +639,7 @@ $(document).ready(function() {
                     // mutually exclusive with right and left
                     if (placed) {
                         sumTips();
+                        messageDominoData($d, "", "placed first....");
                     }
                     return !placed;
                 }
@@ -647,13 +654,13 @@ $(document).ready(function() {
                 }
                 if (placed) {
                     sumTips();
-                } else {
-                    // just a simple move then?
-                    messageDominoData($d, "", "just a simple move");
+                    messageDominoData($d, "", "placed second...");
                 }
                 // if placed, return false to stop .each() loop
                 return !placed;
             });
+            // console.log("eom for ", $d);
+            // messageDominoData($d, "", "end of mouseup");
         });
     });
 });
