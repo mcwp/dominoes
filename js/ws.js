@@ -139,7 +139,9 @@ var ccps = {
          * @gotMessage {Message} a JMS message via the STOMP library
          *
          */
-        if (gotMessage.getStringProperty(ccps.MESSAGE_PROPERTIES.clientId) != ccps.userId) {
+        var msgTxt = gotMessage.getText(),
+            msgFrom = gotMessage.getStringProperty(ccps.MESSAGE_PROPERTIES.clientId);
+        if (msgFrom != ccps.userId) {
             // ccps.log("message from " + gotMessage.getStringProperty(ccps.MESSAGE_PROPERTIES.clientId));
             // set message properties from client, instead of defining it
             // in this helper file.  Then for sending a message, iterate over properties.
@@ -162,14 +164,15 @@ var ccps = {
             }
 
             ccps.gotMessagePlay(messagePropValues);
+            ccps.log("processed: " + " " + msgFrom + " " + ccps.topic + " " + msgTxt);
             
         } else {
             // oh, this is a message from me.  Disregard.
-            ccps.log("echo: " + gotMessage.getText() + ccps.topic);
+            ccps.log("echo: " + " " + msgFrom + " " + ccps.topic + " " + msgTxt);
         }
     },
 
-    sendMessagePlay : function (messagePropValues) {
+    sendMessagePlay : function (messagePropValues, msgTxt) {
         /**
          * Send a message about something that happened in my app.
          *
@@ -189,7 +192,7 @@ var ccps = {
             // create a new message.  The text of this message is unused
             // so you can make it be whatever you want.
             try {
-                newMessage = ccps.session.createTextMessage("carbon-copy pub/sub");
+                newMessage = ccps.session.createTextMessage(msgTxt);
             } catch (e) {
                 ccps.logException(e);
             }
@@ -199,7 +202,7 @@ var ccps = {
             } catch (e) {
                 ccps.logException(e);
             }
-            ccps.log(messagePropValues);
+            // ccps.log(messagePropValues);
             for (var pk in ccps.MESSAGE_PROPERTIES) {
                 if (pk === ccps.MESSAGE_PROPERTIES.clientId) {
                     continue;
@@ -209,8 +212,8 @@ var ccps = {
                     newMessage.setStringProperty(ccps.MESSAGE_PROPERTIES[pk], messagePropValues[pk].toString());
                 }
             }
-            ccps.log("calling producer");
-            ccps.log(newMessage);
+            // ccps.log("calling producer");
+            // ccps.log(newMessage);
             // send the newMessage via the producer of messages
             try {
                 ccps.producer.send(null, newMessage, DeliveryMode.NON_PERSISTENT, 3, 1, function() {
@@ -221,6 +224,8 @@ var ccps = {
                 ccps.logException(e);
             }
             // ccps.log("Message sent by " + ccps.userId);
+        } else {
+            ccps.log("busy sending... msg ignored: " + msgTxt);
         }
     }
 };

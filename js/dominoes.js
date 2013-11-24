@@ -27,7 +27,8 @@ var MESSAGE_PROPERTIES = {
     "newLeft"   : "NEWLEFT",
     "setClass"  : "SETCLASS",
     "scoreA"    : "SCOREA",
-    "scoreB"    : "SCOREB"
+    "scoreB"    : "SCOREB",
+    "playerName": "PLAYERNAME"
 };
 
 
@@ -79,33 +80,59 @@ function setUpMessaging() {
 function init() {
     var d1 = $('#d1');
     d1.css('top', '54px');
-    d1.append($('<p class="flip">' + scorePlayerName + '</p>'));
+    // d1.append($('<p class="flip">' + scorePlayerName + '</p>'));
+}
+
+function revealFront(d) {
+    var myimg = $(d.children()[0]);
+    myimg.attr('src', myimg.attr('front'));
+}
+
+function piecePlayed(oldClasses, newClasses) {
+    return ((oldClasses.search('Tip') === -1) && (newClasses.search('Tip') !== -1));
 }
 
 function acceptMove(messageData) {
-    var d = $(document.getElementById(messageData.dominoId));
-    var top = messageData.newTop;
-    var left = messageData.newLeft;
+    var d = $(document.getElementById(messageData.dominoId)),
+        top = messageData.newTop,
+        left = messageData.newLeft,
+        playerName = messageData.playerName;
+
+    if (playerName !== "") {
+        // only sent from the first mouseUp, which
+        // flips the domino for the other player
+        d.append($('<p class="flip">' + playerName + '</p>'));
+    }
+    if (piecePlayed(d.attr('class'), messageData.setClass)) {
+        // now reveal this domino
+        flip = $(d.children()[1]);
+        flip.remove();
+        revealFront(d);
+    }
     d.css('top', top);
     d.css('left', left);
+    d.removeClass();
     d.attr('class', messageData.setClass);
+
     // flip my view of this domino
     // place it according to message
-    console.log(messageData);
+    // console.log(messageData);
 }
 
 
-function messageDominoData(d) {
-    console.log('placed or untipped domino ');
+function messageDominoData(d, playerName, msgTxt) {
+    // console.log('placed or untipped domino ');
     var newMessageData = {};
     newMessageData.dominoId = d[0].id;
     newMessageData.newTop = d.css('top');
     newMessageData.newLeft = d.css('left');
     newMessageData.setClass = d.attr('class');
+    newMessageData.playerName = playerName;
+
     // console.log("sending ...");
     // console.log($piece);
     // console.log(newMessageData);
-    ccps.sendMessagePlay(newMessageData);
+    ccps.sendMessagePlay(newMessageData, msgTxt);
 }
 
 function setUpBoneyard() {
@@ -149,8 +176,8 @@ function setFirstDomino(d) {
     }
     d.addClass('anyTip');
     d.addClass('veryFirst');
+    messageDominoData(d, "", "set first domino");
     sumTips();
-    messageDominoData(d);
 }
 
 
@@ -315,7 +342,6 @@ function nearTip(tip, rld, d) {
         });
     }
     // console.log("newCard is ", newCard);
-    // after match, do connection?  as with old near.
     if (newCard != 'None') {
         if (newCard == 'tee') {
             // doubles are special
@@ -326,6 +352,7 @@ function nearTip(tip, rld, d) {
                 return false;
             }
             teeDouble(d, card);
+            // messages sent before the call to removeTip
         } else if (newCard == 'unTee') {
             // as are unTees, after a double
             tPips = getPips(tip, 'tee', 0);
@@ -348,12 +375,15 @@ function nearTip(tip, rld, d) {
                 // not anymore, spin around
                 teeDouble(tip, cardinal[tRot]['veryFirst']);
                 tip.removeClass('veryFirst');
+                messageDominoData(tip, "", "no longer veryFirst, spun");
                 // avoid removing the doubleTip too early
                 return true;
             }
             addTip(d, card);
             if (card == opposite) {
                 tip.removeClass('veryFirst');
+                messageDominoData(tip, "", "not first anymore");
+                messageDominoData(d, "", "d added on opposite");
                 // avoid removing the doubleTip too early
                 return true;
             }
@@ -366,7 +396,9 @@ function nearTip(tip, rld, d) {
             }
             addTip(d, newCard);
         }
+        messageDominoData(d, "", "ordinary new tip");
         removeTip(tip, card);
+        messageDominoData(tip, "", "ordinary old tip");
         return true;
     }
     return false;
@@ -405,7 +437,7 @@ function teeDouble(d, card) {
     if (doubleCard !== 'r0') {
         d.addClass(doubleCard);
     }
-    console.log("tee double position is ", doubleCard, d.position());
+    // console.log("tee double position is ", doubleCard, d.position());
 }
 
 function isDouble(d) {
@@ -491,7 +523,7 @@ function sumTips() {
     if ((tips%5) === 0) {
         old = parseInt(scoreForPlayer.text(), 10);
         score = (tips/5);
-        console.log("old", old, " +", score);
+        // console.log("old", old, " +", score);
         scoreForPlayer.text((old+score).toString());
     }
 }
@@ -537,8 +569,8 @@ function rotateMe(me) {
     if (myNext != 'r0') {
         $me.addClass(myNext);
     }
-    console.log("after rotation, position is ", myNext, $me.position());
-    messageDominoData($me);
+    // console.log("after rotation, position is ", myNext, $me.position());
+    messageDominoData($me, "", "dizzy after rotation");
 }
 
 
@@ -552,7 +584,7 @@ $(document).ready(function() {
     });
     $('.startBox').droppable({
         drop: function (event, ui) {
-            console.log(ui.draggable, 'dropped on me', $(this));
+            // console.log(ui.draggable, 'dropped on me', $(this));
             setFirstDomino(ui.draggable);
             $(this).hide();
         }
@@ -564,9 +596,10 @@ $(document).ready(function() {
             grid: [ 9, 9 ]
             // drag: function() { send all or each nth position},        
         });
-        $domino.dblclick(function() {
-            // console.log("double click");
+        $domino.dblclick(function(event) {
+            console.log("double click");
             rotateMe(this);
+            // event.preventDefault();
             // console.log("after rotate, position is: ", $(this).position());
             // Read the position
             // var pos = $(this).adjustedPosition();    
@@ -581,15 +614,13 @@ $(document).ready(function() {
             // move the domino but label it as the opponent's, not
             // flipped.  Only flip for both players once the piece
             // is played.
-            var myimg = $(this).children();
-            myimg.attr('src', myimg.attr('front'));
-            console.log('one mouseup for ', $(this).id);
-            messageDominoData($(this));
+            revealFront($(this));
+            messageDominoData($(this), scorePlayerName, "picked not played");
         });
         $domino.mouseup(function() {
             // console.log("mouse up", $(this).position());
             var $d = $(this);
-            console.log('any mouseup for ', $(this).id);
+            console.log('any mouseup for ', $(this)[0].id);
             $('.anyTip').each(function(index, tip){
                 $tip = $(tip);
                 if ($tip.attr('id') == $d.attr('id')) {
@@ -608,6 +639,7 @@ $(document).ready(function() {
                 if ($tip.hasClass('rightTip')) {
                     placed = nearTip($tip, 'rightTip', $d);
                 }
+                // if (!placed && $tip.hasClass('leftTip')) {
                 if ($tip.hasClass('leftTip')) {
                     // the first piece played will have both r & l tips
                     // likewise a double after both long edges are played
@@ -615,11 +647,13 @@ $(document).ready(function() {
                 }
                 if (placed) {
                     sumTips();
+                } else {
+                    // just a simple move then?
+                    messageDominoData($d, "", "just a simple move");
                 }
                 // if placed, return false to stop .each() loop
                 return !placed;
             });
-            messageDominoData($d);
         });
     });
 });
