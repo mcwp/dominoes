@@ -25,7 +25,7 @@ var ccps = {
 
     // Set the topic dynamically for players to share, or use this
     // default for testing purposes.
-    topic : "/topic/mcpTopic2",
+    queue : "/queue/mcpq",
     // var destination = "/topic/lighttable" + QueryString.id;
     producer : undefined,
     // the consumer can be a local var in startMessaging
@@ -57,12 +57,12 @@ var ccps = {
     send messages about play
     */
     
-    startConnection : function (url, newTopic, onStartCallback, messageProps, gotMessagePlay) {
+    startConnection : function (url, newQueue, onStartCallback, messageProps, gotMessagePlay) {
         /**
          * Connect to JMS, create a session and start it.
          *
          * @param url {String} the websocket url of the form ws:// or wss://
-         * @param newTopic {String} the name of the topic to use for messaging
+         * @param newQueue {String} the name of the queue to use for messaging
          * @param onStartCallback {Function} callback passed to connection.start
          * @param messageProps {Object} defines message properties used for data
          * @param gotMessagePlay {Function} callback for a received message
@@ -70,7 +70,7 @@ var ccps = {
          */
         ccps.log("Connecting to " + url);
 
-        ccps.topic = newTopic;
+        ccps.queue = newQueue;
         ccps.MESSAGE_PROPERTIES = messageProps;
         // add the property we need to keep track of ours vs. theirs
         ccps.MESSAGE_PROPERTIES["clientId"] = "CLIENTID";
@@ -113,9 +113,9 @@ var ccps = {
         // since you can create additional topics later, probably does not
         // matter one way or the other.
 
-        var playTopic = ccps.session.createTopic(ccps.topic);
-        ccps.producer = ccps.session.createProducer(playTopic);
-        var consumer = ccps.session.createConsumer(playTopic);
+        var playQueue = ccps.session.createQueue(ccps.queue);
+        ccps.producer = ccps.session.createProducer(playQueue);
+        var consumer = ccps.session.createConsumer(playQueue);
         // for synchronous messages, we could call consumer.receiveNoWait
         // we want asynchronous delivery, so set a listener
         consumer.setMessageListener(ccps.getMessagePlay);
@@ -164,11 +164,11 @@ var ccps = {
             }
 
             ccps.gotMessagePlay(messagePropValues);
-            ccps.log("processed: " + " " + msgFrom + " " + ccps.topic + " " + msgTxt);
+            ccps.log("processed: " + " " + msgFrom + " " + ccps.queue + " " + msgTxt);
             
         } else {
             // oh, this is a message from me.  Disregard.
-            ccps.log("echo: " + " " + msgFrom + " " + ccps.topic + " " + msgTxt);
+            ccps.log("echo: " + " " + msgFrom + " " + ccps.queue + " " + msgTxt);
         }
     },
 
@@ -216,7 +216,7 @@ var ccps = {
             // ccps.log(newMessage);
             // send the newMessage via the producer of messages
             try {
-                ccps.producer.send(null, newMessage, DeliveryMode.NON_PERSISTENT, 3, 1, function() {
+                ccps.producer.send(null, newMessage, DeliveryMode.PERSISTENT, 3, 1, function() {
                     // ccps.log("callback inside Send, reset sending false");
                     ccps.sending = false;
                 });

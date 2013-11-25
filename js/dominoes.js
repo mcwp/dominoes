@@ -37,7 +37,7 @@ var readyToPlay = false;
 var redplayer = false;
 // var channel = (Math.round (Math.random()*100000)).toString();
 // var channel = 905120;
-var destination = "/topic/dominoes";
+var destination = "/queue/dominoes";
 
 var playPoints, scorePoints, scoreForPlayer, scorePlayerName;
 
