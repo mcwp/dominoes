@@ -5,10 +5,6 @@ possible options:
 
 TBD:
 randomize boneyard
-accept the score by clicking on it?
-handle special case of first domino is a double:  
-    it is bidirectional, and should stay blue until
-    played on both sides, not just one side.
 use message types for different operations? 
     just move - no class changes
     just rotate - no moving
@@ -16,8 +12,7 @@ use message types for different operations?
     remove tips 
     update opponent's score
 
-kaazing mods:
- - pass in userid for each user, based on use clicking player A or player B
+websocket mods:
  - 
 */
 
@@ -27,8 +22,8 @@ var MESSAGE_PROPERTIES = {
     "newTop"    : "NEWTOP",
     "newLeft"   : "NEWLEFT",
     "setClass"  : "SETCLASS",
-    "scoreA"    : "SCOREA",
-    "scoreB"    : "SCOREB",
+    "myScore"   : "MYSCORE",
+    "tipSum"    : "TIPSUM",
     "playerName": "PLAYERNAME"
 };
 
@@ -43,7 +38,8 @@ var readyToPlay = false;
 var destination = "/queue/domi";
 var unsentMessages = [];
 var newMessageData;
-var playPoints, scorePoints, scoreForPlayer, scorePlayerName;
+var scoreForPlayer, scorePlayerName;
+var unselectedPlayer, unselectedButton, otherScore;
 
 var anyRotation = 'r90 r270 r180';
 
@@ -120,10 +116,13 @@ function acceptMove(messageData) {
         d.attr('class', messageData.setClass);
         console.log("set to", d.attr('class'));
     }
+    // if (d.hasClass('veryFirst')) {
+    //     $('.startBox').hide();
+    // }
 
-    // flip my view of this domino
-    // place it according to message
-    // console.log(messageData);
+    // update the tipSum and other player's score
+    $('.tipSum').text(messageData.tipSum);
+    otherScore.text(messageData.myScore);
 }
 
 
@@ -134,8 +133,14 @@ function messageDominoData(d, playerName, msgTxt, required) {
     newMessageData.newTop = d.css('top');
     newMessageData.newLeft = d.css('left');
     newMessageData.setClass = d.attr('class');
-    console.log("sending message for ", d[0].id, " with class: ", newMessageData.setClass);
+    var ms = scoreForPlayer.text();
+    newMessageData.myScore = ms;
+    var ts = $('.tipSum').text();
+    newMessageData.tipSum = ts;
+    // console.log("ms, ts", ms, ts);
+    // console.log("sending message for ", d[0].id, " with class: ", newMessageData.setClass);
     newMessageData.playerName = playerName;
+    console.log(newMessageData);
 
     // console.log("sending ...");
     // console.log($piece);
@@ -592,9 +597,11 @@ $(document).ready(function() {
             selectedPlayer = $('.playerA').text();
             unselectedPlayer = $('.playerB').text();
             unselectedButton = $('#radioB');
+            otherScore = $('.scoreB');
         } else {
             unselectedPlayer = $('.playerA').text();
             unselectedButton = $('#radioA');
+            otherScore = $('.scoreA');
             selectedPlayer = $('.playerB').text();
         }
         // visually indicate choice cannot be changed
