@@ -25,7 +25,7 @@ var ccps = {
 
     // Set the topic dynamically for players to share, or use this
     // default for testing purposes.
-    queue : "/queue/mcpq",
+    //  queue : "/queue/mcpq",
     // var destination = "/topic/lighttable" + QueryString.id;
     producer : undefined,
     // the consumer can be a local var in startMessaging
@@ -174,11 +174,12 @@ var ccps = {
             }
 
             ccps.gotMessagePlay(messagePropValues);
-            ccps.log("processed: " + " " + msgFrom + " " + ccps.queue + " " + msgTxt);
+            ccps.log("processed: " + " " + msgFrom + " " + ccps.yourQ + " " + msgTxt);
             
         } else {
             // oh, this is a message from me.  Disregard.
-            ccps.log("echo: " + " " + msgFrom + " " + ccps.queue + " " + msgTxt);
+            // but I don't listen to my own queue....
+            ccps.log("echo? " + " " + msgFrom + " " + ccps.yourQ + " " + msgTxt);
         }
     },
 

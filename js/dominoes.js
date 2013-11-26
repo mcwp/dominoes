@@ -42,7 +42,7 @@ var readyToPlay = false;
 // go back to topics maybe.  or complimentary produce/consume on 905 and 120
 var destination = "/queue/domi";
 var unsentMessages = [];
-
+var newMessageData;
 var playPoints, scorePoints, scoreForPlayer, scorePlayerName;
 
 var anyRotation = 'r90 r270 r180';
@@ -129,7 +129,7 @@ function acceptMove(messageData) {
 
 function messageDominoData(d, playerName, msgTxt, required) {
     // console.log('placed or untipped domino ');
-    var newMessageData = {};
+    newMessageData = {};
     newMessageData.dominoId = d[0].id;
     newMessageData.newTop = d.css('top');
     newMessageData.newLeft = d.css('left');
@@ -610,12 +610,6 @@ $(document).ready(function() {
             $(this).hide();
         }
     });
-    // $(document).mousemove(function(e){
-    //     // if there is an (important) message on the queue, resend it
-    //     if (unsentMessages.length) {
-    //         messageDominoData(unsentMessages.pop(), "resending", true);
-    //     }
-    // });
     $('.domino').each(function(index, domino){
         $domino = $(domino);
         $domino.draggable({
@@ -623,6 +617,15 @@ $(document).ready(function() {
             drag: function() {
                 messageDominoData($(this), "", "drag", false);
             },
+        });
+        $domino.mouseleave(function(e){
+            // if there is an (important) message on the queue, resend it
+            if (unsentMessages.length) {
+                console.log("resend a message", unsentMessages);
+                var oldMessage = unsentMessages.pop();
+                var d = $(document.getElementById(oldMessage.dominoId));
+                messageDominoData(d, oldMessage.playerName, "resending", true);
+            }
         });
         $domino.dblclick(function(event) {
             console.log("double click");
