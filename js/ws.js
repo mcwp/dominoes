@@ -57,20 +57,23 @@ var ccps = {
     send messages about play
     */
     
-    startConnection : function (url, newQueue, onStartCallback, messageProps, gotMessagePlay) {
+    startConnection : function (url, myQ, yourQ, onStartCallback, messageProps, gotMessagePlay) {
         /**
          * Connect to JMS, create a session and start it.
          *
          * @param url {String} the websocket url of the form ws:// or wss://
-         * @param newQueue {String} the name of the queue to use for messaging
+         * @param myQ {String} the name of the queue to use for messaging
+         * @param yourQ {String} the name of the queue to use for messaging
          * @param onStartCallback {Function} callback passed to connection.start
          * @param messageProps {Object} defines message properties used for data
          * @param gotMessagePlay {Function} callback for a received message
          *
+         * If yourQ is "", then use the same queue for both producer and consumer.
          */
         ccps.log("Connecting to " + url);
 
-        ccps.queue = newQueue;
+        ccps.myQ = myQ;
+        ccps.yourQ = yourQ;
         ccps.MESSAGE_PROPERTIES = messageProps;
         // add the property we need to keep track of ours vs. theirs
         ccps.MESSAGE_PROPERTIES["clientId"] = "CLIENTID";
@@ -113,9 +116,16 @@ var ccps = {
         // since you can create additional topics later, probably does not
         // matter one way or the other.
 
-        var playQueue = ccps.session.createQueue(ccps.queue);
-        ccps.producer = ccps.session.createProducer(playQueue);
-        var consumer = ccps.session.createConsumer(playQueue);
+        var myQ = ccps.session.createQueue(ccps.myQ);
+        var yourQ;
+
+        if (ccps.yourQ !== "") {
+            yourQ = ccps.session.createQueue(ccps.yourQ);
+        } else {
+            yourQ = myQ;
+        }
+        ccps.producer = ccps.session.createProducer(myQ);
+        var consumer = ccps.session.createConsumer(yourQ);
         // for synchronous messages, we could call consumer.receiveNoWait
         // we want asynchronous delivery, so set a listener
         consumer.setMessageListener(ccps.getMessagePlay);
@@ -206,7 +216,7 @@ var ccps = {
             for (var pk in ccps.MESSAGE_PROPERTIES) {
                 if (pk === ccps.MESSAGE_PROPERTIES.clientId) {
                     continue;
-                } else if (messagePropValues[pk] != undefined) {
+                } else if (messagePropValues[pk] !== undefined) {
                     // should we skip over empty strings for all props but
                     // scale and rotate?  hope not.
                     newMessage.setStringProperty(ccps.MESSAGE_PROPERTIES[pk], messagePropValues[pk].toString());
@@ -224,8 +234,10 @@ var ccps = {
                 ccps.logException(e);
             }
             // ccps.log("Message sent by " + ccps.userId);
+            return true;
         } else {
             ccps.log("busy sending... msg ignored: " + msgTxt);
+            return false;
         }
     }
 };

@@ -34,10 +34,14 @@ var MESSAGE_PROPERTIES = {
 
 
 var readyToPlay = false;
-var redplayer = false;
 // var channel = (Math.round (Math.random()*100000)).toString();
 // var channel = 905120;
-var destination = "/queue/dominoes";
+// having switched from topics to queues, need to have a queue for
+// each player!  else the echo eats the message sometimes and the 
+// other player never gets it.  but... how to make the connection then?
+// go back to topics maybe.  or complimentary produce/consume on 905 and 120
+var destination = "/queue/domi";
+var unsentMessages = [];
 
 var playPoints, scorePoints, scoreForPlayer, scorePlayerName;
 
@@ -59,16 +63,12 @@ function setUpPlayers(url) {
     channel = params.c || 905120;
     $('.playerA').text(playerA);
     $('.playerB').text(playerB);
-    // initialize to playerA
-    scoreForPlayer = $('.scoreA');
-    scorePlayerName = playerA;
 }
 
 function setUpMessaging() {
     // construct the WebSocket location
     var locationURI = new URI(document.URL || location.href);
 
-    setUpPlayers(document.URL || location.href);
     locationURI.scheme = locationURI.scheme.replace("http", "ws");
     locationURI.path = "/jms";
     delete locationURI.query;
@@ -76,7 +76,9 @@ function setUpMessaging() {
     // default the location
     var url = locationURI.toString();
     destination = destination + channel;
-    ccps.startConnection(url, destination, init, MESSAGE_PROPERTIES, acceptMove);}
+    myQ = destination + selectedPlayer;
+    yourQ = destination + unselectedPlayer;
+    ccps.startConnection(url, myQ, yourQ, init, MESSAGE_PROPERTIES, acceptMove);}
 
 function init() {
     var d1 = $('#d1');
@@ -125,7 +127,7 @@ function acceptMove(messageData) {
 }
 
 
-function messageDominoData(d, playerName, msgTxt) {
+function messageDominoData(d, playerName, msgTxt, required) {
     // console.log('placed or untipped domino ');
     var newMessageData = {};
     newMessageData.dominoId = d[0].id;
@@ -138,7 +140,9 @@ function messageDominoData(d, playerName, msgTxt) {
     // console.log("sending ...");
     // console.log($piece);
     // console.log(newMessageData);
-    ccps.sendMessagePlay(newMessageData, msgTxt);
+    if (!ccps.sendMessagePlay(newMessageData, msgTxt) && required) {
+        unsentMessages.push(newMessageData);
+    }
 }
 
 function setUpBoneyard() {
@@ -171,6 +175,7 @@ function setUpBoneyard() {
         };
         $(newDomi).css(pos);
     }
+    $('#boneyard').hide();
 }
 
 function setFirstDomino(d) {
@@ -183,7 +188,7 @@ function setFirstDomino(d) {
     d.addClass('anyTip');
     d.addClass('veryFirst');
     sumTips();
-    messageDominoData(d, "", "set first domino");
+    messageDominoData(d, "", "set first domino", true);
 }
 
 
@@ -381,14 +386,14 @@ function nearTip(tip, rld, d) {
                 // not anymore, spin around
                 teeDouble(tip, cardinal[tRot]['veryFirst']);
                 tip.removeClass('veryFirst');
-                messageDominoData(tip, "", "no longer veryFirst, spun");
+                messageDominoData(tip, "", "no longer veryFirst, spun", true);
                 // avoid removing the doubleTip too early
                 return true;
             }
             addTip(d, card);
             if (card == opposite) {
                 tip.removeClass('veryFirst');
-                messageDominoData(tip, "", "not first anymore");
+                messageDominoData(tip, "", "not first anymore", true);
                 // avoid removing the doubleTip too early
                 return true;
             }
@@ -402,7 +407,7 @@ function nearTip(tip, rld, d) {
             addTip(d, newCard);
         }
         removeTip(tip, card);
-        messageDominoData(tip, "", "ordinary old tip");
+        messageDominoData(tip, "", "ordinary old tip", true);
         return true;
     }
     return false;
@@ -578,12 +583,25 @@ function rotateMe(me) {
 
 
 $(document).ready(function() {
-    setUpMessaging();
+    setUpPlayers(document.URL || location.href);
     setUpBoneyard();
-    // default scoring
     $('label').click(function(){
         scoreForPlayer = $($(this).children()[2]);
         scorePlayerName = $($(this).children()[1]).text();
+        if ($(this).prev()[0].id == 'radioA') {
+            selectedPlayer = $('.playerA').text();
+            unselectedPlayer = $('.playerB').text();
+            unselectedButton = $('#radioB');
+        } else {
+            unselectedPlayer = $('.playerA').text();
+            unselectedButton = $('#radioA');
+            selectedPlayer = $('.playerB').text();
+        }
+        // visually indicate choice cannot be changed
+        var radbut = $(unselectedButton.next().children()[0]);
+        radbut.css("border-color", "#000");
+        setUpMessaging();
+        $('#boneyard').css('display', '');
     });
     $('.startBox').droppable({
         drop: function (event, ui) {
@@ -592,19 +610,24 @@ $(document).ready(function() {
             $(this).hide();
         }
     });
+    // $(document).mousemove(function(e){
+    //     // if there is an (important) message on the queue, resend it
+    //     if (unsentMessages.length) {
+    //         messageDominoData(unsentMessages.pop(), "resending", true);
+    //     }
+    // });
     $('.domino').each(function(index, domino){
         $domino = $(domino);
-        // console.log(index, $domino);
         $domino.draggable({
             grid: [ 9, 9 ],
             drag: function() {
-                messageDominoData($(this), "", "drag");
+                messageDominoData($(this), "", "drag", false);
             },
         });
         $domino.dblclick(function(event) {
             console.log("double click");
             rotateMe(this);
-            messageDominoData($(this), "", "just rotated");
+            messageDominoData($(this), "", "just rotated", true);
             // event.preventDefault();
             // console.log("after rotate, position is: ", $(this).position());
             // Read the position
@@ -621,7 +644,7 @@ $(document).ready(function() {
             // flipped.  Only flip for both players once the piece
             // is played.
             revealFront($(this));
-            messageDominoData($(this), scorePlayerName, "picked not played");
+            messageDominoData($(this), scorePlayerName, "picked not played", true);
         });
         $domino.mouseup(function() {
             // console.log("mouse up", $(this).position());
@@ -639,7 +662,7 @@ $(document).ready(function() {
                     // mutually exclusive with right and left
                     if (placed) {
                         sumTips();
-                        messageDominoData($d, "", "placed first....");
+                        messageDominoData($d, "", "placed first....", true);
                     }
                     return !placed;
                 }
@@ -654,7 +677,7 @@ $(document).ready(function() {
                 }
                 if (placed) {
                     sumTips();
-                    messageDominoData($d, "", "placed second...");
+                    messageDominoData($d, "", "placed second...", true);
                 }
                 // if placed, return false to stop .each() loop
                 return !placed;
