@@ -12,8 +12,13 @@ use message types for different operations?
     remove tips 
     update opponent's score
 
-websocket mods:
+Bugs (some amusing):
+ - need to terminate messaging somehow
+ - moving opponent's domino adds name and reveal
  - 
+
+websocket mods:
+ - should some or all of these messages be transactions instead?
 */
 
 
@@ -43,25 +48,26 @@ var unselectedPlayer, unselectedButton, otherScore;
 
 var anyRotation = 'r90 r270 r180';
 
-function setUpPlayers(url) {
+var setUpPlayers = function (url) {
     var qs = url.split('?')[1],
+        pairs,
         params = {};
 
     if (qs) {
-        var pairs = qs.split('&');
-        pairs.forEach(function(pair) {
+        pairs = qs.split('&');
+        pairs.forEach(function (pair) {
             pair = pair.split('=');
             params[pair[0]] = decodeURIComponent(pair[1] || '');
         });
     }
-    playerA = params.a || "Sara";
-    playerB = params.b || "Marla";
+    var playerA = params.a || "Sara";
+    var playerB = params.b || "Marla";
     channel = params.c || 905120;
     $('.playerA').text(playerA);
     $('.playerB').text(playerB);
-}
+};
 
-function setUpMessaging() {
+var setUpMessaging = function () {
     // construct the WebSocket location
     var locationURI = new URI(document.URL || location.href);
 
@@ -74,24 +80,25 @@ function setUpMessaging() {
     destination = destination + channel;
     myQ = destination + selectedPlayer;
     yourQ = destination + unselectedPlayer;
-    ccps.startConnection(url, myQ, yourQ, init, MESSAGE_PROPERTIES, acceptMove);}
+    ccps.startConnection(url, myQ, yourQ, init, MESSAGE_PROPERTIES, acceptMove);
+};
 
-function init() {
+var init = function () {
     var d1 = $('#d1');
     d1.css('top', '54px');
     // d1.append($('<p class="flip">' + scorePlayerName + '</p>'));
-}
+};
 
-function revealFront(d) {
+var revealFront = function (d) {
     var myimg = $(d.children()[0]);
     myimg.attr('src', myimg.attr('front'));
-}
+};
 
-function piecePlayed(oldClasses, newClasses) {
+var piecePlayed = function (oldClasses, newClasses) {
     return ((oldClasses.search('Tip') === -1) && (newClasses.search('Tip') !== -1));
-}
+};
 
-function acceptMove(messageData) {
+var acceptMove = function (messageData) {
     var d = $(document.getElementById(messageData.dominoId)),
         top = messageData.newTop,
         left = messageData.newLeft,
@@ -123,10 +130,10 @@ function acceptMove(messageData) {
     // update the tipSum and other player's score
     $('.tipSum').text(messageData.tipSum);
     otherScore.text(messageData.myScore);
-}
+};
 
 
-function messageDominoData(d, playerName, msgTxt, required) {
+var messageDominoData = function (d, playerName, msgTxt, required) {
     // console.log('placed or untipped domino ');
     newMessageData = {};
     newMessageData.dominoId = d[0].id;
@@ -148,9 +155,9 @@ function messageDominoData(d, playerName, msgTxt, required) {
     if (!ccps.sendMessagePlay(newMessageData, msgTxt) && required) {
         unsentMessages.push(newMessageData);
     }
-}
+};
 
-function setUpBoneyard() {
+var setUpBoneyard = function () {
     // create the dominoes
     var dominoes = [['db', '0', '0'],   ['d6', '6', '6'],   ['d5', '5', '5'],
         ['d4', '4', '4'],   ['d3', '3', '3'],   ['d2', '2', '2'],   ['d1', '1', '1'],
@@ -181,9 +188,9 @@ function setUpBoneyard() {
         $(newDomi).css(pos);
     }
     $('#boneyard').hide();
-}
+};
 
-function setFirstDomino(d) {
+var setFirstDomino = function (d) {
     if (isDouble(d)) {
         d.addClass('doubleTip');
     } else {
@@ -194,10 +201,10 @@ function setFirstDomino(d) {
     d.addClass('veryFirst');
     sumTips();
     messageDominoData(d, "", "set first domino", true);
-}
+};
 
 
-function getOffsets(d1, d2) {
+var getOffsets = function (d1, d2) {
     var pos1 = d1.position();
     var pos2 = d2.position();
     // console.log(pos1, pos2);
@@ -205,9 +212,9 @@ function getOffsets(d1, d2) {
         'x' : parseInt(pos1.left, 10) - parseInt(pos2.left, 10),
         'y' : parseInt(pos1.top, 10) - parseInt(pos2.top, 10)
     };
-}
+};
 
-function getRotation(d) {
+var getRotation = function (d) {
     if (d.hasClass('r90')) {
         return 'r90';
     }
@@ -218,7 +225,7 @@ function getRotation(d) {
         return 'r270';
     }
     return 'r0';
-}
+};
 
 var teeRotation = {
     'East'  : {
@@ -260,7 +267,8 @@ var cardinal = {
         'leftTip'   : 'South',
         'doubleTip' : 'West',
         'veryFirst' : 'East'
-    }};
+    }
+};
 
 
 var targetSpots = {
@@ -298,23 +306,23 @@ var targetSpots = {
     }
 };
 
-function close(point, target) {
+var closeByTen = function (point, target) {
     var lt = target-10,
         gt = target+10;
     return (lt <= point && point <= gt);
-}
+};
 
 
-function matchTarget(card, pDiffs, target) {
+var matchTarget = function (card, pDiffs, target) {
     // should/could handle pip matching here, too?
-    if (close(pDiffs.y, targetSpots[card][target].y) &&
-        close(pDiffs.x, targetSpots[card][target].x)) {
+    if (closeByTen(pDiffs.y, targetSpots[card][target].y) &&
+        closeByTen(pDiffs.x, targetSpots[card][target].x)) {
         return target;
     }
     return 'None';
-}
+};
 
-function nearTip(tip, rld, d) {
+var nearTip = function (tip, rld, d) {
     // return true if piece is placed
     var pDiffs = getOffsets(d, tip),
         dRot = getRotation(d),
@@ -416,9 +424,9 @@ function nearTip(tip, rld, d) {
         return true;
     }
     return false;
-}
+};
 
-function getPips(domino, card, i) {
+var getPips = function (domino, card, i) {
     if (card == 'tee') {
         // domino is double, either end works
         return pips(domino, 'lPips');
@@ -427,7 +435,7 @@ function getPips(domino, card, i) {
     } else {
         return pips(domino, 'rPips');
     }
-}
+};
 
 
 var horizontal = {
@@ -438,7 +446,7 @@ var horizontal = {
 };
 
 
-function teeDouble(d, card) {
+var teeDouble = function (d, card) {
     // since this is a double, play it as a tee
     // card is direction of old tip
     // use this to encode the initial orthogonal 
@@ -452,13 +460,13 @@ function teeDouble(d, card) {
         d.addClass(doubleCard);
     }
     // console.log("tee double position is ", doubleCard, d.position());
-}
+};
 
-function isDouble(d) {
+var isDouble = function (d) {
     var l = parseInt(d.attr('lPips'), 10),
         r = parseInt(d.attr('rPips'), 10);
     return (l==r);
-}
+};
 
 
 var whichTips = {
@@ -480,7 +488,7 @@ var whichTips = {
     }
 };
 
-function removeTip(tip, card) {
+var removeTip = function (tip, card) {
     var rot = getRotation(tip);
 
     if (tip.hasClass('doubleTip')) {
@@ -498,23 +506,23 @@ function removeTip(tip, card) {
         }
     }
     tip.draggable({ disabled: true });
-}
+};
 
-function addTip(d, newCard) {
+var addTip = function (d, newCard) {
     var rot = getRotation(d),
         wt = whichTips[rot][newCard];
     d.addClass(wt[0]);
     d.addClass('anyTip');
-}
+};
 
-function pips(domino, lrPips) {
+var pips = function (domino, lrPips) {
     var $domino = $(domino);
     p = parseInt($domino.attr(lrPips), 10);
     // console.log("in pips", lrPips, p);
     return p;
-}
+};
 
-function sumTips() {
+var sumTips = function () {
     var score = 0, old = 0, tips = 0;
     $('.anyTip').each(function(index, domino){
         $domino = $(domino);
@@ -540,7 +548,7 @@ function sumTips() {
         // console.log("old", old, " +", score);
         scoreForPlayer.text((old+score).toString());
     }
-}
+};
 
 var nextRotation = {
     'r0'    : 'r90',
@@ -549,21 +557,21 @@ var nextRotation = {
     'r270'  : 'r0'
 };
 
-function goVertical(pos) {
+var goVertical = function (pos) {
     return {
         top : pos.top + 18,
         left: pos.left - 18
     };
-}
+};
 
-function goHorizontal(pos) {
+var goHorizontal = function (pos) {
     return {
         top : pos.top - 18,
         left: pos.left + 18
     };
-}
+};
 
-function rotateMe(me) {
+var rotateMe = function (me) {
     // Instead of simply spinning, which is nice but confusing
     // for placing dominoes, spin such that my top/left position
     // remains constant in all four cardinal directions
@@ -584,7 +592,7 @@ function rotateMe(me) {
         $me.addClass(myNext);
     }
     // console.log("after rotation, position is ", myNext, $me.position());
-}
+};
 
 
 $(document).ready(function() {
@@ -621,7 +629,7 @@ $(document).ready(function() {
         $domino = $(domino);
         $domino.draggable({
             grid: [ 9, 9 ],
-            drag: function() {
+            drag: function () {
                 messageDominoData($(this), "", "drag", false);
             },
         });
