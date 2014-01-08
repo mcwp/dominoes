@@ -5,6 +5,15 @@ var CCPS_VERSION = "Carbon Copy Pub/Sub via web sockets, for little demo games."
  *
  http://kaazingcorp.cachefly.net/com/file/Kaazing-QS-JMS-Edition-Feb-2012.pdf
  *
+ *
+ * To run on aws:
+ * http://tech.kaazing.com/documentation/aws/
+ * Launch EC2 instance, Community AMIs, search for kaazing and pick latest 
+ * jms version, 
+ * e.g. kaazing-jms-3.5.5.115-ubuntu-12.04-precise-amd64-20130301-0141 - ami-06920736
+ * use userdata generated with the correct product key (offeringCode=9AF066E1), the
+ * https://aws-portal.amazon.com/gp/aws/user/subscription/index.html?ie=UTF8&offeringCode=9AF066E1
+ * user data 7, security group 7
  */
 
 
@@ -30,7 +39,7 @@ var ccps = {
     producer : undefined,
     // the consumer can be a local var in startMessaging
     // consumer : undefined,
-    
+
 
     // userId could also be set dynamically for a player.  The only firm
     // requirement is that it be not equal to the userID sent with
@@ -43,7 +52,7 @@ var ccps = {
     // of data.  You could set a type property by adding this:
     //  "messageType": "MESSAGE_TYPE",
     // and defining this:
-    
+
     // MESSAGE_TYPES : {
     //    "imgMoved": "IMGMOVED",
     //    "justText": "JUSTTEXT"
@@ -56,7 +65,7 @@ var ccps = {
       startListening (or set element event handlers in html file)
     send messages about play
     */
-    
+
     startConnection : function (url, myQ, yourQ, onStartCallback, messageProps, gotMessagePlay) {
         /**
          * Connect to JMS, create a session and start it.
