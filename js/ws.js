@@ -140,6 +140,9 @@ var ccps = {
         consumer.setMessageListener(ccps.getMessagePlay);
     },
 
+    closeConnection : function() {
+        ccps.log("Closing connection " + ccps.myQ);
+    },
 
     logException : function (e) {
         ccps.log("EXCEPTION: " + e);

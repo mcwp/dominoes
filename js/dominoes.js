@@ -706,3 +706,6 @@ $(document).ready(function() {
     });
 });
 
+$(window).unload(function(){
+    ccps.closeConnection();
+});
