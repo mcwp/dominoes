@@ -79,14 +79,14 @@ var ccps = {
          *
          * If yourQ is "", then use the same queue for both producer and consumer.
          */
-        ccps.log("Connecting to " + url);
+        this.log("Connecting to " + url);
 
-        ccps.myQ = myQ;
-        ccps.yourQ = yourQ;
-        ccps.MESSAGE_PROPERTIES = messageProps;
+        this.myQ = myQ;
+        this.yourQ = yourQ;
+        this.MESSAGE_PROPERTIES = messageProps;
         // add the property we need to keep track of ours vs. theirs
-        ccps.MESSAGE_PROPERTIES["clientId"] = "CLIENTID";
-        ccps.gotMessagePlay = gotMessagePlay;
+        this.MESSAGE_PROPERTIES["clientId"] = "CLIENTID";
+        this.gotMessagePlay = gotMessagePlay;
         // local vars are not needed outside of this function
         var stompConnectionFactory = new StompConnectionFactory(url);
 
@@ -108,13 +108,13 @@ var ccps = {
                 }
             });
         } catch (e) {
-            ccps.logException(e);
+            this.logException(e);
         }
     },
 
     startMessaging : function () {
         // create a session and then start it.
-        ccps.session = ccps.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        this.session = this.connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         // should the session be explicitly closed?
         // maybe on $(window).unload?
 
@@ -125,27 +125,27 @@ var ccps = {
         // since you can create additional topics later, probably does not
         // matter one way or the other.
 
-        var myQ = ccps.session.createQueue(ccps.myQ);
+        var myQ = this.session.createQueue(this.myQ);
         var yourQ;
 
-        if (ccps.yourQ !== "") {
-            yourQ = ccps.session.createQueue(ccps.yourQ);
+        if (this.yourQ !== "") {
+            yourQ = this.session.createQueue(this.yourQ);
         } else {
             yourQ = myQ;
         }
-        ccps.producer = ccps.session.createProducer(myQ);
-        var consumer = ccps.session.createConsumer(yourQ);
+        this.producer = this.session.createProducer(myQ);
+        var consumer = this.session.createConsumer(yourQ);
         // for synchronous messages, we could call consumer.receiveNoWait
         // we want asynchronous delivery, so set a listener
-        consumer.setMessageListener(ccps.getMessagePlay);
+        consumer.setMessageListener(this.getMessagePlay);
     },
 
     closeConnection : function() {
-        ccps.log("Closing connection " + ccps.myQ);
+        this.log("Closing connection " + this.myQ);
     },
 
     logException : function (e) {
-        ccps.log("EXCEPTION: " + e);
+        this.log("EXCEPTION: " + e);
     },
 
     log : function(s) {
@@ -160,7 +160,10 @@ var ccps = {
          *
          * @gotMessage {Message} a JMS message via the STOMP library
          *
+         * Apparently when getMessagePlay is called back from the 
+         * listener, this != ccps.  It is something in the stomp lib.
          */
+        ccps.log("lost in space");
         var msgTxt = gotMessage.getText(),
             msgFrom = gotMessage.getStringProperty(ccps.MESSAGE_PROPERTIES.clientId);
         if (msgFrom != ccps.userId) {
