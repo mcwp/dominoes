@@ -147,7 +147,7 @@ var messageDominoData = function (d, playerName, msgTxt, required) {
     // console.log("ms, ts", ms, ts);
     // console.log("sending message for ", d[0].id, " with class: ", newMessageData.setClass);
     newMessageData.playerName = playerName;
-    console.log(newMessageData);
+    console.log("sending msg play for " + newMessageData.dominoId);
 
     // console.log("sending ...");
     // console.log($piece);
