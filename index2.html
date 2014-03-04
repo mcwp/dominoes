@@ -1,0 +1,36 @@
+<html>
+    <head>
+        <title>Dominoes for Sara</title>
+        <link rel="stylesheet" href="css/style.css"/>
+        <!-- Required for IE6/IE7 cross-origin support -->
+        <meta name="kaazing:postMessageBridgeURL" content="PostMessageBridge.html">
+        <script data-main="js/controller_module.js" src="../requirejs/require.js"></script>
+    </head>
+    <body style='background-color:black;'>
+    <div id="players" class="outermost">
+            <div class='scores lineUp'>
+                <div>
+                    <input type="radio" id="radioA" name="radio"/>
+                    <label for="radioA">
+                        <span class="radbut"></span>
+                        <span class="playerA">Sara</span>'s score:
+                        <span class='scoreA'>0</span></br>
+                    </label>
+                </div>
+
+                <div>
+                    <input type="radio" id="radioB" name="radio" />
+                    <label for="radioB">
+                        <span class="radbut"></span>
+                        <span class="playerB">Marla</span>'s score:
+                        <span class='scoreB'>0</span>
+                    </label>
+                </div>
+            </div>
+            <div class="tipSum lineUp">0</div>
+            <div id="boneyard" class="boneStyle"></div>
+            <div class='startBox'>
+            </div>
+        </div>
+    </body>
+</html>
