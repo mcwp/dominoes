@@ -92,21 +92,23 @@ var ccps = {
 
         try {
             // if needed, pass username and password to createConnection
-            var connectionFuture = stompConnectionFactory.createConnection(function() {
-                if (!connectionFuture.exception) {
+            var connectionFuture = stompConnectionFactory.createConnection(function(cf, ccpsLockedIn, callbackLockedIn) {
+                if (!cf.exception) {
                     try {
-                        ccps.connection = connectionFuture.getValue();
-                        ccps.connection.setExceptionListener(ccps.logException);
-                        ccps.log("Now connected to " + url);
-                        ccps.startMessaging();
-                        ccps.connection.start(onStartCallback);
+                        ccpsLockedIn.connection = cf.getValue();
+                        ccpsLockedIn.connection.setExceptionListener(ccpsLockedIn.logException);
+                        ccpsLockedIn.log("Now connected to " + url);
+                        ccpsLockedIn.startMessaging();
+                        ccpsLockedIn.connection.start(callbackLockedIn);
                     } catch (e) {
-                        ccps.logException(e);
+                        ccpsLockedIn.logException(e);
                     }
                 } else {
-                    ccps.logException(connectionFuture.exception);
+                    ccpsLockedIn.logException(cf.exception);
                 }
-            });
+            })(connectionFuture | {}, this, onStartCallback);  // maybe?  http://benalman.com/news/2010/11/immediately-invoked-function-expression/
+            // is the above necessary?  why or why not?
+            // spell out example and compare to Stomp docs, maybe ask if there is a forum
         } catch (e) {
             this.logException(e);
         }
