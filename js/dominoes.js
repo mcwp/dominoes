@@ -599,6 +599,7 @@ $(document).ready(function() {
     setUpPlayers(document.URL || location.href);
     setUpBoneyard();
     $('label').click(function(){
+        // try instead scoreForPlayer = $(this).children(":eq(2)"); 
         scoreForPlayer = $($(this).children()[2]);
         scorePlayerName = $($(this).children()[1]).text();
         if ($(this).prev()[0].id == 'radioA') {
@@ -670,7 +671,9 @@ $(document).ready(function() {
             console.log('any mouseup for ', $(this)[0].id);
             $('.anyTip').each(function(index, tip){
                 $tip = $(tip);
-                if ($tip.attr('id') == $d.attr('id')) {
+                // http://www.stoimen.com/blog/2010/03/31/jquery-get-the-id-of-the-current-element/
+                // if ($tip.attr('id') == $d.attr('id')) {
+                if ($tip.id == $d.id) {
                     // don't match with myself, continue .each loop
                     return true;
                 }
