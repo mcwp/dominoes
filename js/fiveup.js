@@ -6,6 +6,8 @@ define(
         // var ccps = new Ccps();
         var pub = {};
 
+        // private functions
+
         var shuffle = function (array) {
             var m = array.length, t, i;
             // While there remain elements to shuffle…
@@ -21,6 +23,41 @@ define(
             }
             return array;
         };
+
+        var isDouble = function (d) {
+            return d.data('lPips') === d.data('rPips');
+        };
+
+        var sumTips = function () {
+            var score = 0, old = 0, tips = 0;
+            $('.anyTip').each(function(index, domino){
+                $domino = $(domino);
+                if ($domino.hasClass("noScore")) {
+                    // skip, continue .each loop
+                    return true;
+                }
+                if ($domino.hasClass('leftTip')) {
+                    tips += $domino.data('lPips');
+                }
+                if ($domino.hasClass('rightTip')) {
+                    tips += $domino.data('rPips');
+                }
+                if ($domino.hasClass('doubleTip')) {
+                    tips += 2*($domino.data('lPips'));
+                }
+            });
+
+            $('.tipSum').text(tips.toString());
+            if ((tips%5) === 0) {
+                old = scoreForPlayer.data('score');
+                score = (tips/5) + old;
+                // console.log("old", old, " +", score);
+                scoreForPlayer.data('score', score);
+                scoreForPlayer.text((score).toString());
+            }
+        };
+
+        // public functions
 
         pub.setUpPlayers = function (url) {
             // 
@@ -91,12 +128,29 @@ define(
                 otherScore = $('.scoreA');
                 selectedPlayer = $('.playerB').text();
             }
+            scoreForPlayer.data('score', 0);
+            otherScore.data('score', 0);
             // visually indicate choice cannot be changed
             var radbut = $(unselectedButton.next().children()[0]);
             radbut.css("border-color", "#000");
             // setUpMessaging();
             $('#boneyard').css('display', '');
             console.log(selectedPlayer, unselectedPlayer, scoreForPlayer, otherScore);
+        };
+
+        pub.setFirstDomino = function (startBox, d) {
+            // set the first domino on the startbox and hide startbox
+            if (isDouble(d)) {
+                d.addClass('doubleTip');
+            } else {
+                d.addClass('leftTip');
+                d.addClass('rightTip');
+            }
+            d.addClass('anyTip');
+            d.addClass('veryFirst');
+            sumTips();
+            // messageDominoData(d, "", "set first domino", true);
+            $(startBox).hide();
         };
 
         // return the public interface to fiveUp

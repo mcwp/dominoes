@@ -15,7 +15,14 @@ require(
             localFiveUp.setUpPlayers(document.URL || location.href);
             localFiveUp.setUpBoneyard();
             $('label').click( function () {
+                // try using one instead of click here to prevent re-selection?
                 localFiveUp.pickedPlayer(this);
+            });
+            $('.startBox').droppable({
+                drop: function (event, ui) {
+                    // console.log(ui.draggable, 'dropped on me', $(this));
+                    localFiveUp.setFirstDomino(this, ui.draggable);
+                }
             });
         });
     }
