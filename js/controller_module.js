@@ -24,6 +24,24 @@ require(
                     localFiveUp.setFirstDomino(this, ui.draggable);
                 }
             });
+            $('.domino').each(function(index, domino){
+                $domino = $(domino);
+                $domino.draggable({
+                    grid: [ 9, 9 ],
+                    // drag: function () {
+                    //     messageDominoData($(this), "", "drag", false);
+                    // },
+                });
+                $domino.one('mouseup', function(){
+                    // change this to flip the domino when it is picked 
+                    // by a player; the message to the other player will
+                    // move the domino but label it as the opponent's, not
+                    // flipped.  Only flip for both players once the piece
+                    // is played.
+                    localFiveUp.revealFront(this);
+                    // messageDominoData($(this), scorePlayerName, "picked not played", true);
+                });
+            });
         });
     }
 );

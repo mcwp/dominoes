@@ -5,6 +5,7 @@ define(
     function () {
         // var ccps = new Ccps();
         var pub = {};
+        var scoreForPlayer;
 
         // private functions
 
@@ -115,7 +116,7 @@ define(
         pub.pickedPlayer = function (picked) {
             // User selected playerA or B.
             $picked = $(picked);
-            var scoreForPlayer = $picked.children(":eq(2)");
+            scoreForPlayer = $picked.children(":eq(2)");
             var scorePlayerName = $picked.children(":eq(1)").text();
             if ($picked.prev()[0].id == 'radioA') {
                 selectedPlayer = $('.playerA').text();
@@ -136,6 +137,11 @@ define(
             // setUpMessaging();
             $('#boneyard').css('display', '');
             console.log(selectedPlayer, unselectedPlayer, scoreForPlayer, otherScore);
+        };
+
+        pub.revealFront = function (d) {
+            var myimg = $(d).children(":eq(0)");
+            myimg.attr('src', myimg.data('front'));
         };
 
         pub.setFirstDomino = function (startBox, d) {
