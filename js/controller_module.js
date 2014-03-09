@@ -14,6 +14,9 @@ require(
         $(document).ready(function() {
             localFiveUp.setUpPlayers(document.URL || location.href);
             localFiveUp.setUpBoneyard();
+            $('label').click( function () {
+                localFiveUp.pickedPlayer(this);
+            });
         });
     }
 );

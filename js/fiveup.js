@@ -8,7 +8,6 @@ define(
 
         var shuffle = function (array) {
             var m = array.length, t, i;
-
             // While there remain elements to shuffle…
             while (m) {
 
@@ -20,7 +19,6 @@ define(
                 array[m] = array[i];
                 array[i] = t;
             }
-
             return array;
         };
 
@@ -54,7 +52,6 @@ define(
                 ['35', 3, 5],   ['25', 2, 5],   ['15', 1, 5],   ['34', 3, 4],
                 ['24', 2, 4],   ['14', 1, 4],   ['23', 2, 3],   ['13', 1, 3],
                 ['12', 1, 2], ];
-
             var backimg = '<img src="https://dl.dropboxusercontent.com/u/78878172/domis/back.png"/>';
             var shuffled = shuffle(dominoes);
             for (i=0; i < shuffled.length; i++) {
@@ -75,9 +72,34 @@ define(
                 };
                 newDomi.css(pos);
             }
-            // $('#boneyard').hide();
+            $('#boneyard').hide();
         };
 
+        pub.pickedPlayer = function (picked) {
+            // User selected playerA or B.
+            $picked = $(picked);
+            var scoreForPlayer = $picked.children(":eq(2)");
+            var scorePlayerName = $picked.children(":eq(1)").text();
+            if ($picked.prev()[0].id == 'radioA') {
+                selectedPlayer = $('.playerA').text();
+                unselectedPlayer = $('.playerB').text();
+                unselectedButton = $('#radioB');
+                otherScore = $('.scoreB');
+            } else {
+                unselectedPlayer = $('.playerA').text();
+                unselectedButton = $('#radioA');
+                otherScore = $('.scoreA');
+                selectedPlayer = $('.playerB').text();
+            }
+            // visually indicate choice cannot be changed
+            var radbut = $(unselectedButton.next().children()[0]);
+            radbut.css("border-color", "#000");
+            // setUpMessaging();
+            $('#boneyard').css('display', '');
+            console.log(selectedPlayer, unselectedPlayer, scoreForPlayer, otherScore);
+        };
+
+        // return the public interface to fiveUp
         return pub;
     }
 );
