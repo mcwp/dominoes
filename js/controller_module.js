@@ -41,6 +41,10 @@ require(
                     localFiveUp.revealFront(this);
                     // messageDominoData($(this), scorePlayerName, "picked not played", true);
                 });
+                $domino.dblclick(function(event) {
+                    localFiveUp.rotateMe(this);
+                    // messageDominoData($(this), "", "just rotated", true);
+                });
             });
         });
     }

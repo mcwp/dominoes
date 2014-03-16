@@ -58,6 +58,50 @@ define(
             }
         };
 
+        var anyRotation = 'r90 r270 r180';
+
+        var nextRotation = {
+            'r0'    : 'r90',
+            'r90'   : 'r180',
+            'r180'  : 'r270',
+            'r270'  : 'r0'
+        };
+
+        var goVertical = function (pos) {
+            return {
+                top : pos.top + 18,
+                left: pos.left - 18
+            };
+        };
+
+        var goHorizontal = function (pos) {
+            return {
+                top : pos.top - 18,
+                left: pos.left + 18
+            };
+        };
+
+        var horizontal = {
+            'r0'    : true,
+            'r90'   : false,
+            'r180'  : true,
+            'r270'  : false
+        };
+
+
+        var getRotation = function (d) {
+            if (d.hasClass('r90')) {
+                return 'r90';
+            }
+            if (d.hasClass('r180')) {
+                return 'r180';
+            }
+            if (d.hasClass('r270')) {
+                return 'r270';
+            }
+            return 'r0';
+        };
+
         // public functions
 
         pub.setUpPlayers = function (url) {
@@ -157,6 +201,29 @@ define(
             sumTips();
             // messageDominoData(d, "", "set first domino", true);
             $(startBox).hide();
+        };
+
+        pub.rotateMe = function (me) {
+            // Instead of simply spinning, which is nice but confusing
+            // for placing dominoes, spin such that my top/left position
+            // remains constant in all four cardinal directions
+            var mySpin, myNext;
+
+            $me = $(me);
+            mySpin = getRotation($me);
+            myNext = nextRotation[mySpin];
+            $me.removeClass(anyRotation);
+            pos = $me.position();
+            if (horizontal[myNext]) {
+                $me.css(goHorizontal(pos));
+            } else {
+                //console.log("leaving horizontal rotation, pos = ", pos);
+                $me.css(goVertical(pos));
+            }
+            if (myNext != 'r0') {
+                $me.addClass(myNext);
+            }
+            // console.log("after rotation, position is ", myNext, $me.position());            
         };
 
         // return the public interface to fiveUp
